@@ -17,11 +17,14 @@ class AppTheme {
         onSurface: AppColors.onSurface,
         onError: AppColors.onError,
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.onPrimary,
         elevation: 0,
         centerTitle: true,
+        titleSpacing: 0,
+        toolbarHeight: 64,
+        leadingWidth: 56,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

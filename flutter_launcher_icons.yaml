@@ -1,0 +1,8 @@
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo.png"
+  adaptive_icon_background: "#FFFFFF"  # White background for Android adaptive icon
+  adaptive_icon_foreground: "assets/images/logo.png"
+  remove_alpha_ios: true  # Remove transparency for iOS (required by App Store)
+

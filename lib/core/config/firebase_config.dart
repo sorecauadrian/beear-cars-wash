@@ -1,38 +1,38 @@
-// import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
-/// Firebase configuration
+/// Firebase configuration and initialization
 /// 
-/// This file will be used to initialize Firebase with the appropriate
-/// configuration based on the build flavor (dev/prod).
+/// This handles Firebase initialization. Once you add the config files:
+/// - android/app/google-services.json (or in dev/prod folders)
+/// - ios/Runner/GoogleService-Info.plist
 /// 
-/// For now, it's a placeholder. Once you add google-services.json and
-/// GoogleService-Info.plist files, uncomment the initialization code.
+/// Firebase will automatically detect and use them.
 class FirebaseConfig {
   FirebaseConfig._();
 
-  /// Initialize Firebase based on the current environment
+  /// Initialize Firebase
+  /// 
+  /// This will work automatically once you:
+  /// 1. Add google-services.json to android/app/
+  /// 2. Add GoogleService-Info.plist to ios/Runner/
+  /// 
+  /// For dev/prod flavors, you can extend this later.
   static Future<void> initialize() async {
-    // TODO: Uncomment when Firebase config files are added
-    // 
-    // For dev environment:
-    // await Firebase.initializeApp(
-    //   options: DefaultFirebaseOptions.currentPlatform,
-    // );
-    //
-    // For prod environment (with flavors):
-    // if (kDebugMode) {
-    //   await Firebase.initializeApp(
-    //     options: DefaultFirebaseOptions.dev,
-    //   );
-    // } else {
-    //   await Firebase.initializeApp(
-    //     options: DefaultFirebaseOptions.prod,
-    //   );
-    // }
-    
-    if (kDebugMode) {
-      print('Firebase initialization placeholder - add config files to enable');
+    try {
+      await Firebase.initializeApp();
+      if (kDebugMode) {
+      print('✅ Firebase initialized successfully');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Firebase initialization failed: $e');
+        print('📝 Make sure you have added the Firebase config files:');
+        print('   - android/app/google-services.json');
+        print('   - ios/Runner/GoogleService-Info.plist');
+      }
+      // Re-throw to prevent app from running without Firebase
+      rethrow;
     }
   }
 }

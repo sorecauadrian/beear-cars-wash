@@ -2,12 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/routing/app_router.dart';
+import 'core/config/firebase_config.dart';
+import 'core/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // TODO: Initialize Firebase when config files are added
-  // await Firebase.initializeApp();
+  // Initialize Firebase
+  // This will work once you add the config files (see docs/FIREBASE_SETUP.md)
+  try {
+    await FirebaseConfig.initialize();
+    
+    // Initialize notification service
+    await NotificationService().initialize();
+  } catch (e) {
+    // If Firebase fails to initialize, the app will still run
+    // but Firebase features won't work. This allows development
+    // before Firebase is set up.
+    debugPrint('Warning: Firebase not initialized. Add config files to enable Firebase features.');
+  }
   
   runApp(
     const ProviderScope(
