@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 enum WashType {
   interior,
   exterior,
-  cosmetic,
+  tapiterie,
   all;
 
   static WashType fromString(String value) {
@@ -13,8 +13,9 @@ enum WashType {
         return WashType.interior;
       case 'exterior':
         return WashType.exterior;
-      case 'cosmetic':
-        return WashType.cosmetic;
+      case 'tapiterie':
+      case 'cosmetic': // Legacy support
+        return WashType.tapiterie;
       case 'all':
         return WashType.all;
       default:
@@ -29,8 +30,8 @@ enum WashType {
         return 'interior';
       case WashType.exterior:
         return 'exterior';
-      case WashType.cosmetic:
-        return 'cosmetic';
+      case WashType.tapiterie:
+        return 'tapiterie';
       case WashType.all:
         return 'all';
     }

@@ -16,37 +16,14 @@ class VehiclesListScreen extends ConsumerWidget {
     final vehiclesAsync = ref.watch(myVehiclesProvider);
     final userAsync = ref.watch(currentUserProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const AppLogo(height: 32),
-            const SizedBox(width: 8),
-            const Text('My Vehicles'),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              final authRepo = ref.read(authRepositoryProvider);
-              await authRepo.signOut();
-              if (context.mounted) {
-                context.go(RouteNames.login);
-              }
-            },
-          ),
-        ],
-      ),
-      body: userAsync.when(
+    return userAsync.when(
         data: (user) {
           if (user == null) {
-            return const Center(child: Text('Not logged in'));
+            return const Center(child: Text('Nu ești autentificat'));
           }
           if (user.companyId == null) {
             return const Center(
-              child: Text('No company assigned to your account'),
+              child: Text('Nu ai o companie asociată contului tău'),
             );
           }
 
@@ -64,7 +41,7 @@ class VehiclesListScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        'No vehicles yet',
+                        'Nu există mașini',
                         style: TextStyle(
                           fontSize: 18,
                           color: Colors.grey,
@@ -72,7 +49,7 @@ class VehiclesListScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Add your first vehicle to get started',
+                        'Adaugă prima ta mașină pentru a începe',
                         style: TextStyle(color: Colors.grey),
                       ),
                       const SizedBox(height: 24),
@@ -81,7 +58,7 @@ class VehiclesListScreen extends ConsumerWidget {
                           context.push(RouteNames.addVehicle);
                         },
                         icon: const Icon(Icons.add),
-                        label: const Text('Add Vehicle'),
+                        label: const Text('Adaugă mașină'),
                       ),
                     ],
                   ),
@@ -120,9 +97,9 @@ class VehiclesListScreen extends ConsumerWidget {
                               value: 'edit',
                               child: Row(
                                 children: [
-                                  Icon(Icons.edit, size: 20),
-                                  SizedBox(width: 8),
-                                  Text('Edit'),
+                                  Icon(Icons.edit, size: 20, color: Colors.blue),
+                                  SizedBox(width: 12),
+                                  Text('Editează', style: TextStyle(fontWeight: FontWeight.w500)),
                                 ],
                               ),
                             ),
@@ -131,8 +108,8 @@ class VehiclesListScreen extends ConsumerWidget {
                               child: Row(
                                 children: [
                                   Icon(Icons.delete, size: 20, color: Colors.red),
-                                  SizedBox(width: 8),
-                                  Text('Delete', style: TextStyle(color: Colors.red)),
+                                  SizedBox(width: 12),
+                                  Text('Șterge', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w500)),
                                 ],
                               ),
                             ),
@@ -171,7 +148,7 @@ class VehiclesListScreen extends ConsumerWidget {
                     onPressed: () {
                       ref.invalidate(myVehiclesProvider);
                     },
-                    child: const Text('Retry'),
+                    child: const Text('Încearcă din nou'),
                   ),
                 ],
               ),
@@ -182,30 +159,7 @@ class VehiclesListScreen extends ConsumerWidget {
         error: (error, stack) => Center(
           child: Text('Error: $error'),
         ),
-      ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            heroTag: 'create_booking',
-            onPressed: () {
-              context.push(RouteNames.createBooking);
-            },
-            tooltip: 'Create Booking',
-            child: const Icon(Icons.add_shopping_cart),
-          ),
-          const SizedBox(height: 8),
-          FloatingActionButton.extended(
-            heroTag: 'add_vehicle',
-            onPressed: () {
-              context.push(RouteNames.addVehicle);
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Add Vehicle'),
-          ),
-        ],
-      ),
-    );
+      );
   }
 
   void _showDeleteDialog(
@@ -216,14 +170,14 @@ class VehiclesListScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Vehicle'),
+        title: const Text('Șterge mașina'),
         content: Text(
-          'Are you sure you want to delete vehicle ${vehicle.plateNumber}?',
+          'Ești sigur că vrei să ștergi mașina ${vehicle.plateNumber}?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('Anulează'),
           ),
           TextButton(
             onPressed: () async {
@@ -234,7 +188,7 @@ class VehiclesListScreen extends ConsumerWidget {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Vehicle deleted successfully'),
+                      content: Text('Mașina a fost ștearsă cu succes'),
                       backgroundColor: Colors.green,
                     ),
                   );
@@ -250,7 +204,7 @@ class VehiclesListScreen extends ConsumerWidget {
                 }
               }
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: const Text('Șterge', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

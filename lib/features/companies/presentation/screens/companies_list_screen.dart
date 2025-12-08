@@ -22,7 +22,7 @@ class CompaniesListScreen extends ConsumerWidget {
           children: [
             const AppLogo(height: 32),
             const SizedBox(width: 8),
-            const Text('Companies'),
+            const Text('Companii'),
           ],
         ),
         actions: [
@@ -52,7 +52,7 @@ class CompaniesListScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'No companies yet',
+                    'Nu există companii',
                     style: TextStyle(
                       fontSize: 18,
                       color: Colors.grey,
@@ -60,7 +60,7 @@ class CompaniesListScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Add your first company',
+                    'Adaugă prima ta companie',
                     style: TextStyle(color: Colors.grey),
                   ),
                   const SizedBox(height: 24),
@@ -69,7 +69,7 @@ class CompaniesListScreen extends ConsumerWidget {
                       context.push(RouteNames.addCompany);
                     },
                     icon: const Icon(Icons.add),
-                    label: const Text('Add Company'),
+                    label: const Text('Adaugă companie'),
                   ),
                 ],
               ),
@@ -108,9 +108,9 @@ class CompaniesListScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Contract: ${company.contractNumber}'),
-                        Text('City: ${company.city}'),
+                        Text('Oraș: ${company.city}'),
                         Text(
-                          company.isActive ? 'Active' : 'Inactive',
+                          company.isActive ? 'Activă' : 'Inactivă',
                           style: TextStyle(
                             color: company.isActive ? Colors.green : Colors.grey,
                           ),
@@ -125,7 +125,7 @@ class CompaniesListScreen extends ConsumerWidget {
                             children: [
                               Icon(Icons.edit, size: 20),
                               SizedBox(width: 8),
-                              Text('Edit'),
+                              Text('Editează'),
                             ],
                           ),
                         ),
@@ -135,7 +135,7 @@ class CompaniesListScreen extends ConsumerWidget {
                             children: [
                               Icon(Icons.delete, size: 20, color: Colors.red),
                               SizedBox(width: 8),
-                              Text('Delete', style: TextStyle(color: Colors.red)),
+                              Text('Șterge', style: TextStyle(color: Colors.red)),
                             ],
                           ),
                         ),
@@ -164,13 +164,13 @@ class CompaniesListScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, size: 64, color: Colors.red),
               const SizedBox(height: 16),
-              Text('Error: $error'),
+              Text('Eroare: $error'),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
                   ref.invalidate(allCompaniesProvider);
                 },
-                child: const Text('Retry'),
+                child: const Text('Încearcă din nou'),
               ),
             ],
           ),
@@ -181,7 +181,7 @@ class CompaniesListScreen extends ConsumerWidget {
           context.push(RouteNames.addCompany);
         },
         icon: const Icon(Icons.add),
-        label: const Text('Add Company'),
+        label: const Text('Adaugă companie'),
       ),
     );
   }
@@ -194,14 +194,14 @@ class CompaniesListScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Company'),
+        title: const Text('Șterge compania'),
         content: Text(
-          'Are you sure you want to delete ${company.name}?',
+          'Ești sigur că vrei să ștergi ${company.name}?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('Anulează'),
           ),
           TextButton(
             onPressed: () async {
@@ -212,7 +212,7 @@ class CompaniesListScreen extends ConsumerWidget {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Company deleted successfully'),
+                      content: Text('Compania a fost ștearsă cu succes'),
                       backgroundColor: Colors.green,
                     ),
                   );
@@ -228,7 +228,7 @@ class CompaniesListScreen extends ConsumerWidget {
                 }
               }
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: const Text('Șterge', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

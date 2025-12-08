@@ -145,5 +145,23 @@ class BookingRepository {
       throw Exception('Failed to delete booking: ${e.toString()}');
     }
   }
+
+  /// Delete all bookings for a company
+  Future<void> deleteBookingsByCompany(String companyId) async {
+    try {
+      final snapshot = await _firestore
+          .collection(FirestorePaths.bookings)
+          .where('companyId', isEqualTo: companyId)
+          .get();
+
+      final batch = _firestore.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Failed to delete bookings for company: ${e.toString()}');
+    }
+  }
 }
 

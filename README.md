@@ -50,8 +50,6 @@ B2B on-site car wash service mobile app for Beear Cars Wash.
 
 ## Documentation
 
-- [Implementation Plan](IMPLEMENTATION_PLAN.md)
-- [Phase 1 Complete](docs/PHASE_1_COMPLETE.md)
 - [GitHub Setup Guide](docs/GITHUB_SETUP.md)
 - [Store Setup Guide](docs/STORE_SETUP.md) (coming soon)
 

@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'route_names.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/customer_home_screen.dart';
 import '../../features/vehicles/presentation/screens/vehicles_list_screen.dart';
 import '../../features/vehicles/presentation/screens/add_vehicle_screen.dart';
 import '../../features/vehicles/presentation/screens/edit_vehicle_screen.dart';
@@ -33,7 +34,7 @@ class AppRouter {
       // Company Admin routes
       GoRoute(
         path: RouteNames.companyHome,
-        builder: (context, state) => const VehiclesListScreen(),
+        builder: (context, state) => const CustomerHomeScreen(),
       ),
       GoRoute(
         path: RouteNames.addVehicle,

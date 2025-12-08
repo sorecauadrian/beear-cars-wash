@@ -1,0 +1,19 @@
+/// API Keys Configuration Template
+///
+/// To get your Google Maps API keys:
+/// 1. Go to https://console.cloud.google.com/
+/// 2. Create a new project or select an existing one
+/// 3. Enable "Maps SDK for Android" and "Maps SDK for iOS"
+/// 4. Enable "Geocoding API" (for address conversion)
+/// 5. Create API keys for Android and iOS
+/// 6. Replace the values below
+class ApiKeys {
+  ApiKeys._();
+
+  // replace with your actual Google Maps API key for Android
+  static const String googleMapsAndroid = 'YOUR_ANDROID_API_KEY_HERE';
+
+  // replace with your actual Google Maps API key for iOS
+  static const String googleMapsIOS = 'YOUR_IOS_API_KEY_HERE';
+}
+

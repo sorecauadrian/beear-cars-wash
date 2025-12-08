@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/company_repository.dart';
 import '../../data/models/company_model.dart';
+import '../../../bookings/data/repositories/booking_repository.dart';
 
 /// Company repository provider
 final companyRepositoryProvider = Provider<CompanyRepository>((ref) {
@@ -56,6 +57,12 @@ final updateCompanyProvider =
 final deleteCompanyProvider = Provider.family<Future<void>, String>(
   (ref, companyId) async {
     final repository = ref.read(companyRepositoryProvider);
+    final bookingRepository = BookingRepository();
+    
+    // Delete all bookings for this company first
+    await bookingRepository.deleteBookingsByCompany(companyId);
+    
+    // Then delete the company
     return repository.deleteCompany(companyId);
   },
 );

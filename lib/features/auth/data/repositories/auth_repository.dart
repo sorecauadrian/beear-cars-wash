@@ -78,27 +78,37 @@ class AuthRepository {
   }
 
   /// Handle Firebase Auth exceptions and return user-friendly messages
-  String _handleAuthException(FirebaseAuthException e) {
+  Exception _handleAuthException(FirebaseAuthException e) {
+    String message;
     switch (e.code) {
       case 'user-not-found':
-        return 'No user found with this email.';
+        message = 'Nu există utilizator cu acest email.';
+        break;
       case 'wrong-password':
-        return 'Wrong password provided.';
+        message = 'Parolă incorectă.';
+        break;
       case 'invalid-email':
-        return 'Invalid email address.';
+        message = 'Adresă de email invalidă.';
+        break;
       case 'user-disabled':
-        return 'This account has been disabled.';
+        message = 'Acest cont a fost dezactivat.';
+        break;
       case 'too-many-requests':
-        return 'Too many failed attempts. Please try again later.';
+        message = 'Prea multe încercări eșuate. Te rugăm să încerci din nou mai târziu.';
+        break;
       case 'operation-not-allowed':
-        return 'Email/password sign-in is not enabled.';
+        message = 'Autentificarea cu email/parolă nu este activată.';
+        break;
       case 'weak-password':
-        return 'Password is too weak.';
+        message = 'Parola este prea slabă.';
+        break;
       case 'email-already-in-use':
-        return 'An account already exists with this email.';
+        message = 'Există deja un cont cu acest email.';
+        break;
       default:
-        return 'Authentication failed: ${e.message ?? 'Unknown error'}';
+        message = 'Autentificare eșuată: ${e.message ?? 'Eroare necunoscută'}';
     }
+    return Exception(message);
   }
 }
 

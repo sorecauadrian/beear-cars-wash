@@ -52,7 +52,7 @@ class _AddCompanyScreenState extends ConsumerState<AddCompanyScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Company created successfully'),
+          content: Text('Compania a fost creată cu succes'),
           backgroundColor: Colors.green,
         ),
       );
@@ -80,7 +80,7 @@ class _AddCompanyScreenState extends ConsumerState<AddCompanyScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Company'),
+        title: const Text('Adaugă companie'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -92,13 +92,13 @@ class _AddCompanyScreenState extends ConsumerState<AddCompanyScreen> {
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Company Name *',
-                  hintText: 'Enter company name',
+                  labelText: 'Nume companie *',
+                  hintText: 'Introdu numele companiei',
                   prefixIcon: Icon(Icons.business),
                 ),
                 validator: (value) => Validators.required(
                   value,
-                  fieldName: 'Company name',
+                  fieldName: 'Numele companiei',
                 ),
                 enabled: !_isLoading,
                 autofocus: true,
@@ -107,13 +107,13 @@ class _AddCompanyScreenState extends ConsumerState<AddCompanyScreen> {
               TextFormField(
                 controller: _contractController,
                 decoration: const InputDecoration(
-                  labelText: 'Contract Number *',
-                  hintText: 'Enter contract number',
+                  labelText: 'Număr contract *',
+                  hintText: 'Introdu numărul contractului',
                   prefixIcon: Icon(Icons.description),
                 ),
                 validator: (value) => Validators.required(
                   value,
-                  fieldName: 'Contract number',
+                  fieldName: 'Numărul contractului',
                 ),
                 enabled: !_isLoading,
               ),
@@ -121,20 +121,20 @@ class _AddCompanyScreenState extends ConsumerState<AddCompanyScreen> {
               TextFormField(
                 controller: _cityController,
                 decoration: const InputDecoration(
-                  labelText: 'City *',
-                  hintText: 'Enter city',
+                  labelText: 'Oraș *',
+                  hintText: 'Introdu orașul',
                   prefixIcon: Icon(Icons.location_city),
                 ),
                 validator: (value) => Validators.required(
                   value,
-                  fieldName: 'City',
+                  fieldName: 'Orașul',
                 ),
                 enabled: !_isLoading,
               ),
               const SizedBox(height: 16),
               SwitchListTile(
-                title: const Text('Active'),
-                subtitle: const Text('Company is active and can receive bookings'),
+                title: const Text('Activă'),
+                subtitle: const Text('Compania este activă și poate primi rezervări'),
                 value: _isActive,
                 onChanged: _isLoading
                     ? null
@@ -159,7 +159,7 @@ class _AddCompanyScreenState extends ConsumerState<AddCompanyScreen> {
                           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
-                    : const Text('Save Company'),
+                    : const Text('Salvează compania'),
               ),
             ],
           ),

@@ -29,15 +29,15 @@ class BookingStatusChip extends StatelessWidget {
   String get _statusLabel {
     switch (status) {
       case BookingStatus.requested:
-        return 'Requested';
+        return 'Solicitat';
       case BookingStatus.accepted:
-        return 'Accepted';
+        return 'Acceptat';
       case BookingStatus.rejected:
-        return 'Rejected';
+        return 'Respins';
       case BookingStatus.inProgress:
-        return 'In Progress';
+        return 'În progres';
       case BookingStatus.done:
-        return 'Done';
+        return 'Finalizat';
     }
   }
 

@@ -60,3 +60,6 @@ android/app/keystore.jks
 
 # Local properties (contains SDK paths specific to each machine)
 android/local.properties
+
+# API Keys
+lib/core/config/api_keys.dart
