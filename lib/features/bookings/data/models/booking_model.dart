@@ -43,6 +43,7 @@ enum BookingStatus {
   requested,
   accepted,
   rejected,
+  cancelled, // Admin-initiated cancellation (accident, can't make it, etc.)
   inProgress,
   done;
 
@@ -54,6 +55,8 @@ enum BookingStatus {
         return BookingStatus.accepted;
       case 'rejected':
         return BookingStatus.rejected;
+      case 'cancelled':
+        return BookingStatus.cancelled;
       case 'in_progress':
         return BookingStatus.inProgress;
       case 'done':
@@ -72,6 +75,8 @@ enum BookingStatus {
         return 'accepted';
       case BookingStatus.rejected:
         return 'rejected';
+      case BookingStatus.cancelled:
+        return 'cancelled';
       case BookingStatus.inProgress:
         return 'in_progress';
       case BookingStatus.done:

@@ -7,6 +7,8 @@ class FirestorePaths {
   static const String users = 'users';
   static const String vehicles = 'vehicles';
   static const String bookings = 'bookings';
+  static const String serviceRecords = 'serviceRecords';
+  static const String pricing = 'pricing';
 
   // Helper methods to build paths
   static String company(String companyId) => '$companies/$companyId';

@@ -19,6 +19,8 @@ class BookingStatusChip extends StatelessWidget {
         return AppColors.accepted;
       case BookingStatus.rejected:
         return AppColors.rejected;
+      case BookingStatus.cancelled:
+        return AppColors.cancelled;
       case BookingStatus.inProgress:
         return AppColors.inProgress;
       case BookingStatus.done:
@@ -34,6 +36,8 @@ class BookingStatusChip extends StatelessWidget {
         return 'Acceptat';
       case BookingStatus.rejected:
         return 'Respins';
+      case BookingStatus.cancelled:
+        return 'Anulat';
       case BookingStatus.inProgress:
         return 'În progres';
       case BookingStatus.done:

@@ -21,9 +21,10 @@ class EditCompanyScreen extends ConsumerStatefulWidget {
 class _EditCompanyScreenState extends ConsumerState<EditCompanyScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _contractController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _cityController = TextEditingController();
-  bool _isActive = true;
+  ClientType _clientType = ClientType.persoanaFizica;
   bool _isLoading = false;
   CompanyModel? _company;
 
@@ -44,14 +45,15 @@ class _EditCompanyScreenState extends ConsumerState<EditCompanyScreen> {
         setState(() {
           _company = company;
           _nameController.text = company.name;
-          _contractController.text = company.contractNumber;
+          _emailController.text = company.email;
+          _passwordController.text = company.password;
+          _clientType = company.clientType;
           _cityController.text = company.city;
-          _isActive = company.isActive;
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Company not found'),
+            content: Text('Clientul nu a fost găsit'),
             backgroundColor: Colors.red,
           ),
         );
@@ -61,7 +63,7 @@ class _EditCompanyScreenState extends ConsumerState<EditCompanyScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error loading company: $e'),
+          content: Text('Eroare la încărcarea clientului: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -72,7 +74,8 @@ class _EditCompanyScreenState extends ConsumerState<EditCompanyScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _contractController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     _cityController.dispose();
     super.dispose();
   }
@@ -91,9 +94,11 @@ class _EditCompanyScreenState extends ConsumerState<EditCompanyScreen> {
         UpdateCompanyParams(
           company: _company!,
           name: _nameController.text.trim(),
-          contractNumber: _contractController.text.trim(),
+          clientType: _clientType,
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
           city: _cityController.text.trim(),
-          isActive: _isActive,
+          isActive: _company!.isActive, // Keep existing active status
         ),
       );
       await ref.read(updateProvider);
@@ -101,10 +106,10 @@ class _EditCompanyScreenState extends ConsumerState<EditCompanyScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Company updated successfully'),
-          backgroundColor: Colors.green,
-        ),
+          const SnackBar(
+            content: Text('Client actualizat cu succes'),
+            backgroundColor: Colors.green,
+          ),
       );
 
       context.pop();
@@ -136,7 +141,7 @@ class _EditCompanyScreenState extends ConsumerState<EditCompanyScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Company'),
+        title: const Text('Editează client'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -148,27 +153,71 @@ class _EditCompanyScreenState extends ConsumerState<EditCompanyScreen> {
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Company Name *',
-                  hintText: 'Enter company name',
-                  prefixIcon: Icon(Icons.business),
+                  labelText: 'Nume *',
+                  hintText: 'Introdu numele',
+                  prefixIcon: Icon(Icons.person),
                 ),
                 validator: (value) => Validators.required(
                   value,
-                  fieldName: 'Company name',
+                  fieldName: 'Numele',
                 ),
                 enabled: !_isLoading,
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _contractController,
+              DropdownButtonFormField<ClientType>(
+                value: _clientType,
                 decoration: const InputDecoration(
-                  labelText: 'Contract Number *',
-                  hintText: 'Enter contract number',
-                  prefixIcon: Icon(Icons.description),
+                  labelText: 'Tip client *',
+                  prefixIcon: Icon(Icons.category),
                 ),
+                items: ClientType.values.map((type) {
+                  return DropdownMenuItem<ClientType>(
+                    value: type,
+                    child: Text(type.displayName),
+                  );
+                }).toList(),
+                onChanged: _isLoading
+                    ? null
+                    : (value) {
+                        if (value != null) {
+                          setState(() {
+                            _clientType = value;
+                          });
+                        }
+                      },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email *',
+                  hintText: 'Introdu email-ul',
+                  prefixIcon: Icon(Icons.email),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Introdu email-ul';
+                  }
+                  if (!value.contains('@')) {
+                    return 'Email invalid';
+                  }
+                  return null;
+                },
+                enabled: !_isLoading,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _passwordController,
+                decoration: const InputDecoration(
+                  labelText: 'Parolă *',
+                  hintText: 'Introdu parola',
+                  prefixIcon: Icon(Icons.lock),
+                ),
+                obscureText: true,
                 validator: (value) => Validators.required(
                   value,
-                  fieldName: 'Contract number',
+                  fieldName: 'Parola',
                 ),
                 enabled: !_isLoading,
               ),
@@ -176,28 +225,15 @@ class _EditCompanyScreenState extends ConsumerState<EditCompanyScreen> {
               TextFormField(
                 controller: _cityController,
                 decoration: const InputDecoration(
-                  labelText: 'City *',
-                  hintText: 'Enter city',
+                  labelText: 'Oraș *',
+                  hintText: 'Introdu orașul',
                   prefixIcon: Icon(Icons.location_city),
                 ),
                 validator: (value) => Validators.required(
                   value,
-                  fieldName: 'City',
+                  fieldName: 'Orașul',
                 ),
                 enabled: !_isLoading,
-              ),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                title: const Text('Active'),
-                subtitle: const Text('Company is active and can receive bookings'),
-                value: _isActive,
-                onChanged: _isLoading
-                    ? null
-                    : (value) {
-                        setState(() {
-                          _isActive = value;
-                        });
-                      },
               ),
               const SizedBox(height: 32),
               ElevatedButton(
@@ -214,7 +250,7 @@ class _EditCompanyScreenState extends ConsumerState<EditCompanyScreen> {
                           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
-                    : const Text('Update Company'),
+                    : const Text('Actualizează client'),
               ),
             ],
           ),

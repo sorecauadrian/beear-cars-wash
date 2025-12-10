@@ -38,12 +38,11 @@ class DateTimeUtils {
     }
   }
 
-  /// Get list of available time slots (08:00 - 18:00, 30-min intervals)
+  /// Get list of available time slots (08:00 - 18:00, 1-hour intervals)
   static List<String> getTimeSlots() {
     final slots = <String>[];
     for (int hour = AppConstants.workStartHour; hour < AppConstants.workEndHour; hour++) {
       slots.add('${hour.toString().padLeft(2, '0')}:00');
-      slots.add('${hour.toString().padLeft(2, '0')}:30');
     }
     return slots;
   }

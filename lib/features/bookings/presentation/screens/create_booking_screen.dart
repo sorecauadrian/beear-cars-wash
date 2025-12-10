@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/date_time_utils.dart';
 import '../../../../core/widgets/map_picker.dart';
+import '../../../../core/services/notification_sender_service.dart';
 import '../../../vehicles/presentation/providers/vehicle_provider.dart';
 import '../../../vehicles/data/models/vehicle_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../pricing/presentation/providers/pricing_provider.dart' as pricing;
 import '../../data/models/booking_model.dart';
 import '../../data/repositories/booking_repository.dart';
 import '../providers/booking_provider.dart';
@@ -147,7 +149,29 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
           updatedAt: now,
         );
 
-        await repository.createBooking(booking);
+        final bookingId = await repository.createBooking(booking);
+        
+        // Send notification to admin about new booking
+        final notificationService = NotificationSenderService();
+        final bookingWithId = BookingModel(
+          id: bookingId,
+          companyId: booking.companyId,
+          vehicleId: booking.vehicleId,
+          washType: booking.washType,
+          addressText: booking.addressText,
+          lat: booking.lat,
+          lng: booking.lng,
+          description: booking.description,
+          date: booking.date,
+          slotStart: booking.slotStart,
+          slotEnd: booking.slotEnd,
+          status: booking.status,
+          createdAt: booking.createdAt,
+          updatedAt: booking.updatedAt,
+        );
+        await notificationService.sendNewBookingNotificationToAdmin(
+          booking: bookingWithId,
+        );
       }
 
       if (!mounted) return;
@@ -226,6 +250,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
   @override
   Widget build(BuildContext context) {
     final vehiclesAsync = ref.watch(myVehiclesProvider);
+    final pricingAsync = ref.watch(pricing.currentPricingProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -346,43 +371,121 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: [
-                                    _buildWashTypeChip(
-                                      vehicle.id,
-                                      WashType.interior,
-                                      'Interior',
-                                      Icons.air,
-                                      Colors.blue,
-                                      50.0,
-                                    ),
-                                    _buildWashTypeChip(
-                                      vehicle.id,
-                                      WashType.exterior,
-                                      'Exterior',
-                                      Icons.water_drop,
-                                      Colors.cyan,
-                                      60.0,
-                                    ),
-                                    _buildWashTypeChip(
-                                      vehicle.id,
-                                      WashType.tapiterie,
-                                      'Tapițerie',
-                                      Icons.chair,
-                                      Colors.orange,
-                                      80.0,
-                                    ),
-                                    _buildWashTypeChip(
-                                      vehicle.id,
-                                      WashType.all,
-                                      'Completă',
-                                      Icons.all_inclusive,
-                                      Colors.purple,
-                                      100.0,
-                                    ),
-                                  ],
+                                pricingAsync.when(
+                                  data: (pricing) => Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      _buildWashTypeChip(
+                                        vehicle.id,
+                                        WashType.interior,
+                                        'Interior',
+                                        Icons.air,
+                                        Colors.blue,
+                                        pricing?.interiorPrice ?? 0.0,
+                                      ),
+                                      _buildWashTypeChip(
+                                        vehicle.id,
+                                        WashType.exterior,
+                                        'Exterior',
+                                        Icons.water_drop,
+                                        Colors.cyan,
+                                        pricing?.exteriorPrice ?? 0.0,
+                                      ),
+                                      _buildWashTypeChip(
+                                        vehicle.id,
+                                        WashType.tapiterie,
+                                        'Tapițerie',
+                                        Icons.chair,
+                                        Colors.orange,
+                                        pricing?.tapiteriePrice ?? 0.0,
+                                      ),
+                                      _buildWashTypeChip(
+                                        vehicle.id,
+                                        WashType.all,
+                                        'Completă',
+                                        Icons.all_inclusive,
+                                        Colors.purple,
+                                        pricing?.completePrice ?? 0.0,
+                                      ),
+                                    ],
+                                  ),
+                                  loading: () => Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      _buildWashTypeChip(
+                                        vehicle.id,
+                                        WashType.interior,
+                                        'Interior',
+                                        Icons.air,
+                                        Colors.blue,
+                                        0.0,
+                                      ),
+                                      _buildWashTypeChip(
+                                        vehicle.id,
+                                        WashType.exterior,
+                                        'Exterior',
+                                        Icons.water_drop,
+                                        Colors.cyan,
+                                        0.0,
+                                      ),
+                                      _buildWashTypeChip(
+                                        vehicle.id,
+                                        WashType.tapiterie,
+                                        'Tapițerie',
+                                        Icons.chair,
+                                        Colors.orange,
+                                        0.0,
+                                      ),
+                                      _buildWashTypeChip(
+                                        vehicle.id,
+                                        WashType.all,
+                                        'Completă',
+                                        Icons.all_inclusive,
+                                        Colors.purple,
+                                        0.0,
+                                      ),
+                                    ],
+                                  ),
+                                  error: (_, __) => Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      _buildWashTypeChip(
+                                        vehicle.id,
+                                        WashType.interior,
+                                        'Interior',
+                                        Icons.air,
+                                        Colors.blue,
+                                        0.0,
+                                      ),
+                                      _buildWashTypeChip(
+                                        vehicle.id,
+                                        WashType.exterior,
+                                        'Exterior',
+                                        Icons.water_drop,
+                                        Colors.cyan,
+                                        0.0,
+                                      ),
+                                      _buildWashTypeChip(
+                                        vehicle.id,
+                                        WashType.tapiterie,
+                                        'Tapițerie',
+                                        Icons.chair,
+                                        Colors.orange,
+                                        0.0,
+                                      ),
+                                      _buildWashTypeChip(
+                                        vehicle.id,
+                                        WashType.all,
+                                        'Completă',
+                                        Icons.all_inclusive,
+                                        Colors.purple,
+                                        0.0,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
@@ -615,7 +718,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                 ),
               ),
               Text(
-                '${price.toStringAsFixed(0)} RON',
+                price > 0 ? '${price.toStringAsFixed(2)} RON' : 'Preț necunoscut',
                 style: TextStyle(
                   color: isSelected ? Colors.white70 : Colors.grey[600],
                   fontSize: 10,

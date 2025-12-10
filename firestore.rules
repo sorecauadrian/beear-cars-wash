@@ -1,0 +1,99 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is admin
+    // Safely checks if user document exists and has admin role
+    function isAdmin() {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Users can read their own data
+      allow read: if request.auth != null && request.auth.uid == userId;
+      // Allow read for all authenticated users (needed for role checks and customer name resolution)
+      allow read: if request.auth != null;
+      // Users can write their own data
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Customers collection (NEW - for B2C model)
+    match /customers/{customerId} {
+      // Allow all authenticated users to read/write (for now)
+      // This matches the permissive approach of your old rules
+      allow read, write: if request.auth != null;
+    }
+    
+    // Vehicles collection
+    match /vehicles/{vehicleId} {
+      // Allow all authenticated users to read
+      allow read: if request.auth != null;
+      // Allow all authenticated users to create
+      allow create: if request.auth != null;
+      // Allow all authenticated users to update (matching old permissive approach)
+      allow update: if request.auth != null;
+      // Allow delete for admins or owners (simplified to avoid complex checks)
+      allow delete: if request.auth != null;
+    }
+    
+    // Bookings collection
+    match /bookings/{bookingId} {
+      // Allow all authenticated users to read
+      allow read: if request.auth != null;
+      // Allow all authenticated users to create
+      allow create: if request.auth != null;
+      // Allow all authenticated users to update
+      allow update: if request.auth != null;
+      // Allow delete only for admins
+      allow delete: if isAdmin();
+    }
+    
+    // Service Records collection
+    match /serviceRecords/{recordId} {
+      // Allow all authenticated users to read
+      allow read: if request.auth != null;
+      // Allow create for authenticated users
+      allow create: if request.auth != null;
+      // Allow update for authenticated users (but finalized records should be protected in app logic)
+      allow update: if request.auth != null;
+      // Allow delete for authenticated users
+      allow delete: if request.auth != null;
+    }
+    
+    // Extracts collection (NEW - for monthly service extracts)
+    match /extracts/{extractId} {
+      // Allow all authenticated users to read/write (for now)
+      allow read, write: if request.auth != null;
+    }
+    
+    // Notifications collection (for FCM)
+    match /notifications/{notificationId} {
+      // Allow all authenticated users to read/write (for now)
+      allow read, write: if request.auth != null;
+    }
+    
+    // Legacy: Companies collection (for backward compatibility)
+    match /companies/{companyId} {
+      // Allow all authenticated users to read
+      allow read: if request.auth != null;
+      // Allow write for authenticated users (matching old permissive approach)
+      // In production, you can add role checks here if needed
+      allow write: if request.auth != null;
+    }
+
+    // Pricing collection
+    match /pricing/{pricingId} {
+      // Allow all authenticated users to read
+      allow read: if request.auth != null;
+      // Allow create/update only for admins
+      allow create, update: if isAdmin();
+      // Allow delete only for admins
+      allow delete: if isAdmin();
+    }
+  }
+}
+

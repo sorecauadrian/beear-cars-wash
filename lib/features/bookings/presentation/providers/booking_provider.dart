@@ -47,6 +47,24 @@ final createBookingProvider = Provider.family<Future<String>, CreateBookingParam
   },
 );
 
+/// Delete booking provider
+final deleteBookingProvider = Provider.family<Future<void>, String>(
+  (ref, bookingId) async {
+    final repository = ref.read(bookingRepositoryProvider);
+    return repository.deleteBooking(bookingId);
+  },
+);
+
+/// Delete multiple bookings provider
+final deleteBookingsProvider = Provider.family<Future<void>, List<String>>(
+  (ref, bookingIds) async {
+    final repository = ref.read(bookingRepositoryProvider);
+    for (final bookingId in bookingIds) {
+      await repository.deleteBooking(bookingId);
+    }
+  },
+);
+
 /// Get bookings for current user's company
 final myBookingsProvider = StreamProvider<List<BookingModel>>((ref) {
   final userAsync = ref.watch(currentUserProvider);

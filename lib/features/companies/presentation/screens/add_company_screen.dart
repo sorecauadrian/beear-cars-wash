@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/validators.dart';
 import '../providers/company_provider.dart';
+import '../../data/models/company_model.dart';
 import 'package:go_router/go_router.dart';
 
 /// Add company screen
 class AddCompanyScreen extends ConsumerStatefulWidget {
-  const AddCompanyScreen({super.key});
+  final ClientType? initialClientType;
+  
+  const AddCompanyScreen({
+    super.key,
+    this.initialClientType,
+  });
 
   @override
   ConsumerState<AddCompanyScreen> createState() => _AddCompanyScreenState();
@@ -15,15 +21,23 @@ class AddCompanyScreen extends ConsumerStatefulWidget {
 class _AddCompanyScreenState extends ConsumerState<AddCompanyScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _contractController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _cityController = TextEditingController();
-  bool _isActive = true;
+  late ClientType _clientType;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _clientType = widget.initialClientType ?? ClientType.persoanaFizica;
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _contractController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     _cityController.dispose();
     super.dispose();
   }
@@ -41,9 +55,11 @@ class _AddCompanyScreenState extends ConsumerState<AddCompanyScreen> {
       final createProvider = createCompanyProvider(
         CreateCompanyParams(
           name: _nameController.text.trim(),
-          contractNumber: _contractController.text.trim(),
+          clientType: _clientType,
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
           city: _cityController.text.trim(),
-          isActive: _isActive,
+          isActive: true, // Always active for new clients
         ),
       );
       await ref.read(createProvider);
@@ -51,10 +67,10 @@ class _AddCompanyScreenState extends ConsumerState<AddCompanyScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Compania a fost creată cu succes'),
-          backgroundColor: Colors.green,
-        ),
+          const SnackBar(
+            content: Text('Clientul a fost creat cu succes'),
+            backgroundColor: Colors.green,
+          ),
       );
 
       context.pop();
@@ -80,7 +96,7 @@ class _AddCompanyScreenState extends ConsumerState<AddCompanyScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Adaugă companie'),
+        title: const Text('Adaugă client'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -92,28 +108,72 @@ class _AddCompanyScreenState extends ConsumerState<AddCompanyScreen> {
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Nume companie *',
-                  hintText: 'Introdu numele companiei',
-                  prefixIcon: Icon(Icons.business),
+                  labelText: 'Nume *',
+                  hintText: 'Introdu numele',
+                  prefixIcon: Icon(Icons.person),
                 ),
                 validator: (value) => Validators.required(
                   value,
-                  fieldName: 'Numele companiei',
+                  fieldName: 'Numele',
                 ),
                 enabled: !_isLoading,
                 autofocus: true,
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _contractController,
+              DropdownButtonFormField<ClientType>(
+                value: _clientType,
                 decoration: const InputDecoration(
-                  labelText: 'Număr contract *',
-                  hintText: 'Introdu numărul contractului',
-                  prefixIcon: Icon(Icons.description),
+                  labelText: 'Tip client *',
+                  prefixIcon: Icon(Icons.category),
                 ),
+                items: ClientType.values.map((type) {
+                  return DropdownMenuItem<ClientType>(
+                    value: type,
+                    child: Text(type.displayName),
+                  );
+                }).toList(),
+                onChanged: (_isLoading || widget.initialClientType != null)
+                    ? null
+                    : (value) {
+                        if (value != null) {
+                          setState(() {
+                            _clientType = value;
+                          });
+                        }
+                      },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email *',
+                  hintText: 'Introdu email-ul',
+                  prefixIcon: Icon(Icons.email),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Introdu email-ul';
+                  }
+                  if (!value.contains('@')) {
+                    return 'Email invalid';
+                  }
+                  return null;
+                },
+                enabled: !_isLoading,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _passwordController,
+                decoration: const InputDecoration(
+                  labelText: 'Parolă *',
+                  hintText: 'Introdu parola',
+                  prefixIcon: Icon(Icons.lock),
+                ),
+                obscureText: true,
                 validator: (value) => Validators.required(
                   value,
-                  fieldName: 'Numărul contractului',
+                  fieldName: 'Parola',
                 ),
                 enabled: !_isLoading,
               ),
@@ -132,18 +192,6 @@ class _AddCompanyScreenState extends ConsumerState<AddCompanyScreen> {
                 enabled: !_isLoading,
               ),
               const SizedBox(height: 16),
-              SwitchListTile(
-                title: const Text('Activă'),
-                subtitle: const Text('Compania este activă și poate primi rezervări'),
-                value: _isActive,
-                onChanged: _isLoading
-                    ? null
-                    : (value) {
-                        setState(() {
-                          _isActive = value;
-                        });
-                      },
-              ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _isLoading ? null : _handleSave,
@@ -159,7 +207,7 @@ class _AddCompanyScreenState extends ConsumerState<AddCompanyScreen> {
                           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
-                    : const Text('Salvează compania'),
+                    : const Text('Salvează clientul'),
               ),
             ],
           ),

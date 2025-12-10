@@ -15,6 +15,49 @@ class NotificationSenderService {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  /// Send notification to admin when a new booking is created
+  Future<void> sendNewBookingNotificationToAdmin({
+    required BookingModel booking,
+  }) async {
+    try {
+      // Get all admin users
+      final admins = await _getAdminUsers();
+      if (admins.isEmpty) {
+        if (kDebugMode) {
+          print('No admin users found');
+        }
+        return;
+      }
+
+      // Prepare notification message
+      final title = 'Nouă Rezervare';
+      final body = 'O nouă rezervare a fost creată pentru ${booking.date} la ${booking.slotStart}.';
+
+      // Send notification to all admins
+      for (final admin in admins) {
+        final fcmToken = admin['fcmToken'] as String?;
+        if (fcmToken != null && fcmToken.isNotEmpty) {
+          await _createNotificationDocument(
+            userId: admin.id,
+            fcmToken: fcmToken,
+            title: title,
+            body: body,
+            bookingId: booking.id,
+            status: booking.status.toString(),
+          );
+        }
+      }
+
+      if (kDebugMode) {
+        print('✅ Notification queued for ${admins.length} admin(s)');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Failed to send notification to admin: $e');
+      }
+    }
+  }
+
   /// Send notification to company admin when booking status changes
   Future<void> sendBookingStatusNotification({
     required BookingModel booking,
@@ -67,6 +110,23 @@ class NotificationSenderService {
       if (kDebugMode) {
         print('❌ Failed to send notification: $e');
       }
+    }
+  }
+
+  /// Get all admin users (BeeAR admins)
+  Future<List<DocumentSnapshot>> _getAdminUsers() async {
+    try {
+      final querySnapshot = await _firestore
+          .collection(FirestorePaths.users)
+          .where('role', isEqualTo: 'admin')
+          .get();
+
+      return querySnapshot.docs;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error getting admin users: $e');
+      }
+      return [];
     }
   }
 
@@ -128,10 +188,12 @@ class NotificationSenderService {
         return 'Booking Accepted';
       case BookingStatus.rejected:
         return 'Booking Rejected';
+      case BookingStatus.cancelled:
+        return 'Booking Cancelled';
       case BookingStatus.inProgress:
-        return 'Wash In Progress';
+        return 'Spălarea a început';
       case BookingStatus.done:
-        return 'Wash Completed';
+        return 'Spălarea este finalizată';
       case BookingStatus.requested:
         return 'New Booking Request';
     }
@@ -147,10 +209,12 @@ class NotificationSenderService {
         return 'Your booking for $date at $time has been accepted.';
       case BookingStatus.rejected:
         return 'Your booking for $date at $time has been rejected.';
+      case BookingStatus.cancelled:
+        return 'Your booking for $date at $time has been cancelled. Please contact us if you have any questions.';
       case BookingStatus.inProgress:
-        return 'Your car wash for $date at $time has started.';
+        return 'Spălarea mașinii tale pentru $date la $time a început. Te rugăm să te prezinți la mașină.';
       case BookingStatus.done:
-        return 'Your car wash for $date at $time has been completed.';
+        return 'Spălarea mașinii tale pentru $date la $time este finalizată. Poți veni să o ridici.';
       case BookingStatus.requested:
         return 'Your booking for $date at $time has been submitted.';
     }

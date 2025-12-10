@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/routing/route_names.dart';
 import '../../../../../core/widgets/app_logo.dart';
+import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/services/notification_sender_service.dart';
 import '../../../../../core/utils/date_time_utils.dart';
 import '../../../../../features/auth/presentation/providers/auth_provider.dart';
@@ -37,38 +38,30 @@ class _AdminBookingsListScreenState
 
   @override
   Widget build(BuildContext context) {
+    // Wait for user data to be loaded to avoid permission errors on first load
+    final userAsync = ref.watch(currentUserProvider);
     final bookingsAsync = ref.watch(allBookingsProvider);
     final companiesAsync = ref.watch(_companiesAsync);
+    
+    // Show loading if user data is not yet loaded (prevents permission errors)
+    if (userAsync.isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
         title: const AppLogo(height: 32),
         actions: [
           IconButton(
-            icon: const Icon(Icons.business),
-            tooltip: 'Companies',
-            onPressed: () {
-              context.push(RouteNames.companiesList);
-            },
-          ),
-          IconButton(
             icon: const Icon(Icons.filter_list),
-            tooltip: 'Filter',
+            tooltip: 'Filtrează',
             onPressed: () => _showFilterDialog(context, companiesAsync),
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: () async {
-              final authRepo = ref.read(authRepositoryProvider);
-              await authRepo.signOut();
-              if (context.mounted) {
-                context.go(RouteNames.login);
-              }
-            },
           ),
         ],
       ),
+      drawer: _buildDrawer(context, ref),
       body: Column(
         children: [
           // Toggle completed bookings
@@ -91,6 +84,55 @@ class _AdminBookingsListScreenState
                 ),
               ],
             ),
+          ),
+          // Orphaned bookings warning
+          bookingsAsync.when(
+            data: (bookings) {
+              final orphanedBookings = _getOrphanedBookings(bookings, companiesAsync.value ?? []);
+              if (orphanedBookings.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  border: Border.all(color: Colors.orange.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '${orphanedBookings.length} rezervări cu companii inexistente găsite',
+                        style: TextStyle(
+                          color: Colors.orange.shade900,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => _showDeleteOrphanedBookingsDialog(
+                        context,
+                        ref,
+                        orphanedBookings,
+                      ),
+                      child: Text(
+                        'Șterge',
+                        style: TextStyle(
+                          color: Colors.orange.shade700,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
           ),
           // Active filters display
           if (_selectedCompanyId != null ||
@@ -238,7 +280,9 @@ class _AdminBookingsListScreenState
                         orElse: () => CompanyModel(
                           id: booking.companyId,
                           name: 'Companie necunoscută',
-                          contractNumber: '',
+                          clientType: ClientType.persoanaJuridica,
+                          email: '',
+                          password: '',
                           city: '',
                           isActive: true,
                         ),
@@ -596,7 +640,7 @@ class _AdminBookingsListScreenState
                                     child: _buildInfoCard(
                                       icon: Icons.access_time,
                                       label: 'Ora',
-                                      value: '${booking.slotStart} - ${booking.slotEnd}',
+                                      value: '${booking.slotStart}–${booking.slotEnd}',
                                     ),
                                   ),
                                 ],
@@ -810,6 +854,8 @@ class _AdminBookingsListScreenState
               fontSize: 15,
               fontWeight: FontWeight.w600,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -930,6 +976,8 @@ class _AdminBookingsListScreenState
         return Colors.green;
       case BookingStatus.rejected:
         return Colors.red;
+      case BookingStatus.cancelled:
+        return Colors.orange.shade300; // Light orange for cancelled
     }
   }
 
@@ -999,12 +1047,13 @@ class _AdminBookingsListScreenState
   List<BookingStatus> _getAvailableStatuses(BookingStatus currentStatus) {
     switch (currentStatus) {
       case BookingStatus.requested:
-        return [BookingStatus.accepted, BookingStatus.rejected];
+        return [BookingStatus.accepted, BookingStatus.rejected, BookingStatus.cancelled];
       case BookingStatus.accepted:
-        return [BookingStatus.inProgress];
+        return [BookingStatus.inProgress, BookingStatus.cancelled]; // Admin can cancel accepted bookings
       case BookingStatus.inProgress:
-        return [BookingStatus.done];
+        return [BookingStatus.done, BookingStatus.cancelled]; // Can cancel even if in progress
       case BookingStatus.rejected:
+      case BookingStatus.cancelled:
       case BookingStatus.done:
         return []; // No status changes allowed
     }
@@ -1018,6 +1067,8 @@ class _AdminBookingsListScreenState
         return 'Acceptat';
       case BookingStatus.rejected:
         return 'Respins';
+      case BookingStatus.cancelled:
+        return 'Anulat';
       case BookingStatus.inProgress:
         return 'În progres';
       case BookingStatus.done:
@@ -1062,6 +1113,248 @@ class _AdminBookingsListScreenState
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  Widget _buildDrawer(BuildContext context, WidgetRef ref) {
+    final currentRoute = GoRouterState.of(context).uri.toString();
+    final userAsync = ref.watch(currentUserProvider);
+    
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+            ),
+            child: userAsync.when(
+              data: (user) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Row(
+                    children: [
+                      const AppLogo(height: 32, isWhite: true),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          user?.name ?? 'Administrator',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+              error: (_, __) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  const AppLogo(height: 32, isWhite: true),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Administrator',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          _buildDrawerItem(
+            context: context,
+            icon: Icons.event,
+            title: 'Rezervări',
+            isSelected: currentRoute == RouteNames.adminHome || 
+                       currentRoute == RouteNames.adminBookingsList,
+            onTap: () {
+              Navigator.pop(context);
+              if (currentRoute != RouteNames.adminHome) {
+                context.go(RouteNames.adminHome);
+              }
+            },
+          ),
+          _buildDrawerItem(
+            context: context,
+            icon: Icons.description,
+            title: 'Registre Servicii',
+            isSelected: currentRoute == RouteNames.serviceRecordsList,
+            onTap: () {
+              Navigator.pop(context);
+              context.push(RouteNames.serviceRecordsList);
+            },
+          ),
+          _buildDrawerItem(
+            context: context,
+            icon: Icons.business,
+            title: 'Clienți',
+            isSelected: currentRoute == RouteNames.companiesList ||
+                       currentRoute.startsWith(RouteNames.addCompany) ||
+                       currentRoute.startsWith(RouteNames.editCompany),
+            onTap: () {
+              Navigator.pop(context);
+              context.push(RouteNames.companiesList);
+            },
+          ),
+          _buildDrawerItem(
+            context: context,
+            icon: Icons.attach_money,
+            title: 'Prețuri',
+            isSelected: currentRoute == RouteNames.pricing,
+            onTap: () {
+              Navigator.pop(context);
+              context.push(RouteNames.pricing);
+            },
+          ),
+          _buildDrawerItem(
+            context: context,
+            icon: Icons.settings,
+            title: 'Setări',
+            isSelected: currentRoute == RouteNames.adminSettings,
+            onTap: () {
+              Navigator.pop(context);
+              context.push(RouteNames.adminSettings);
+            },
+          ),
+          const Divider(),
+          _buildDrawerItem(
+            context: context,
+            icon: Icons.logout,
+            title: 'Deconectare',
+            isSelected: false,
+            onTap: () async {
+              Navigator.pop(context);
+              final authRepo = ref.read(authRepositoryProvider);
+              await authRepo.signOut();
+              if (context.mounted) {
+                context.go(RouteNames.login);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: isSelected ? AppColors.primary : null,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          color: isSelected ? AppColors.primary : null,
+        ),
+      ),
+      selected: isSelected,
+      selectedTileColor: AppColors.primary.withValues(alpha: 0.1),
+      onTap: onTap,
+    );
+  }
+
+  /// Get bookings with missing companies (orphaned bookings)
+  List<BookingModel> _getOrphanedBookings(
+    List<BookingModel> bookings,
+    List<CompanyModel> companies,
+  ) {
+    final companyIds = companies.map((c) => c.id).toSet();
+    return bookings.where((booking) => !companyIds.contains(booking.companyId)).toList();
+  }
+
+  /// Show dialog to confirm deletion of orphaned bookings
+  Future<void> _showDeleteOrphanedBookingsDialog(
+    BuildContext context,
+    WidgetRef ref,
+    List<BookingModel> orphanedBookings,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Șterge rezervările orfane'),
+        content: Text(
+          'Ești sigur că vrei să ștergi ${orphanedBookings.length} rezervări cu companii inexistente?\n\n'
+          'Această acțiune nu poate fi anulată.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Anulează'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Șterge'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        // Show loading
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+
+        // Delete all orphaned bookings
+        final repository = ref.read(bookingRepositoryProvider);
+        for (final booking in orphanedBookings) {
+          await repository.deleteBooking(booking.id);
+        }
+
+        // Refresh bookings
+        ref.invalidate(allBookingsProvider);
+
+        if (context.mounted) {
+          Navigator.pop(context); // Close loading dialog
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '${orphanedBookings.length} rezervări au fost șterse cu succes',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          Navigator.pop(context); // Close loading dialog
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Eroare la ștergere: ${e.toString()}',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 }

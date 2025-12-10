@@ -3,6 +3,7 @@ class RouteNames {
   RouteNames._();
 
   // Auth
+  static const String splash = '/splash';
   static const String login = '/login';
 
   // Company Admin
@@ -12,6 +13,7 @@ class RouteNames {
   static const String editVehicle = '/company/vehicles/edit';
   static const String createBooking = '/company/bookings/create';
   static const String bookingDetails = '/company/bookings/details';
+  static const String customerSettings = '/company/settings';
 
   // BeeAR Admin
   static const String adminHome = '/admin/home';
@@ -20,5 +22,10 @@ class RouteNames {
   static const String companiesList = '/admin/companies';
   static const String addCompany = '/admin/companies/add';
   static const String editCompany = '/admin/companies/edit';
+  static const String serviceRecordsList = '/admin/service-records';
+  static const String addServiceRecord = '/admin/service-records/add';
+  static const String editServiceRecord = '/admin/service-records/edit';
+  static const String pricing = '/admin/pricing';
+  static const String adminSettings = '/admin/settings';
 }
 

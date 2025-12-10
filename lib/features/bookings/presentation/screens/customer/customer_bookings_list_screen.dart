@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/utils/date_time_utils.dart';
+import '../../../../../core/theme/app_colors.dart';
 import '../../../../../features/vehicles/data/repositories/vehicle_repository.dart';
 import '../../../../../features/vehicles/data/models/vehicle_model.dart';
 import '../../../data/models/booking_model.dart';
@@ -298,15 +299,17 @@ class _CustomerBookingsListScreenState
   Color _getStatusColor(BookingStatus status) {
     switch (status) {
       case BookingStatus.requested:
-        return Colors.orange;
+        return AppColors.requested;
       case BookingStatus.accepted:
-        return Colors.blue;
+        return AppColors.accepted;
       case BookingStatus.inProgress:
-        return Colors.purple;
+        return AppColors.inProgress;
       case BookingStatus.done:
-        return Colors.green;
+        return AppColors.done;
       case BookingStatus.rejected:
-        return Colors.red;
+        return AppColors.rejected;
+      case BookingStatus.cancelled:
+        return AppColors.cancelled;
     }
   }
 }

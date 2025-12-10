@@ -87,6 +87,24 @@ class VehicleRepository {
     }
   }
 
+  /// Delete all vehicles for a company
+  Future<void> deleteVehiclesByCompany(String companyId) async {
+    try {
+      final snapshot = await _firestore
+          .collection(FirestorePaths.vehicles)
+          .where('companyId', isEqualTo: companyId)
+          .get();
+
+      final batch = _firestore.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Failed to delete vehicles for company: ${e.toString()}');
+    }
+  }
+
   /// Check if vehicle has future bookings
   /// Returns true if vehicle has any bookings with status != rejected and date >= today
   Future<bool> hasFutureBookings(String vehicleId) async {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../providers/auth_provider.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/routing/route_names.dart';
@@ -78,7 +79,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // Check if user is already logged in
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser != null) {
+        // User is already logged in, navigate to appropriate home
+        _checkAndNavigate(context);
+      }
+    });
+  }
+
+  Future<void> _checkAndNavigate(BuildContext context) async {
+    try {
+      final authRepo = ref.read(authRepositoryProvider);
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser != null) {
+        final user = await authRepo.getUserData(firebaseUser.uid);
+        if (!context.mounted) return;
+        
+        if (user.isAdmin) {
+          context.go(RouteNames.adminHome);
+        } else {
+          context.go(RouteNames.companyHome);
+        }
+      }
+    } catch (e) {
+      // If error, stay on login screen
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -86,10 +122,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF00395E),
-              const Color(0xFF00395E).withValues(alpha: 0.8),
-              Colors.blue.shade700,
+              colorScheme.primary,
+              colorScheme.primary.withValues(alpha: 0.9),
+              colorScheme.secondary.withValues(alpha: 0.8),
             ],
+            stops: const [0.0, 0.5, 1.0],
           ),
         ),
         child: SafeArea(
@@ -103,78 +140,56 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 40),
-                    // Logo with background
+                    // App name with logo text - matching splash screen style
                     Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(32),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 20,
+                            blurRadius: 40,
+                            spreadRadius: 5,
                             offset: const Offset(0, 10),
                           ),
                         ],
                       ),
                       child: Image.asset(
-                        'assets/images/logo.png',
-                        height: 100,
-                        width: 100,
+                        'assets/images/beear-cars-wash-no-text.png',
+                        height: 120,
+                        width: 120,
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
+                          return Icon(
                             Icons.local_car_wash,
                             size: 80,
-                            color: Color(0xFF00395E),
+                            color: colorScheme.primary,
                           );
                         },
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Beear Cars Wash',
-                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                offset: const Offset(0, 2),
-                                blurRadius: 4,
-                              ),
-                            ],
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Bine ai venit!',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            fontWeight: FontWeight.w500,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
                     const SizedBox(height: 48),
 
-                    // Card with form
+                    // Card with form - modern design
                     Card(
-                      elevation: 8,
+                      elevation: 0,
+                      color: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(24),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(24.0),
+                        padding: const EdgeInsets.all(32.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Text(
                               'Autentificare',
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                    color: const Color(0xFF00395E),
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                color: colorScheme.tertiary,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 32),
@@ -188,12 +203,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 labelText: 'Email',
                                 hintText: 'Introdu adresa de email',
                                 prefixIcon: Icon(Icons.email_outlined),
-                                border: OutlineInputBorder(),
                               ),
                               validator: Validators.email,
                               enabled: !_isLoading,
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 24),
 
                             // Password field
                             TextFormField(
@@ -217,7 +231,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     });
                                   },
                                 ),
-                                border: const OutlineInputBorder(),
                               ),
                               validator: (value) => Validators.required(
                                 value,
@@ -225,19 +238,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                               enabled: !_isLoading,
                             ),
-                            const SizedBox(height: 32),
+                            const SizedBox(height: 36),
 
                             // Login button
                             ElevatedButton(
                               onPressed: _isLoading ? null : _handleLogin,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF00395E),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(vertical: 18),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                elevation: 4,
+                                elevation: 2,
                               ),
                               child: _isLoading
                                   ? const SizedBox(
@@ -254,6 +265,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.5,
                                       ),
                                     ),
                             ),

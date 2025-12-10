@@ -1,7 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../data/repositories/company_repository.dart';
 import '../../data/models/company_model.dart';
 import '../../../bookings/data/repositories/booking_repository.dart';
+import '../../../vehicles/data/repositories/vehicle_repository.dart';
+import '../../../../core/constants/firestore_paths.dart';
 
 /// Company repository provider
 final companyRepositoryProvider = Provider<CompanyRepository>((ref) {
@@ -30,7 +34,9 @@ final createCompanyProvider =
     final company = CompanyModel(
       id: '', // Will be set by repository
       name: params.name,
-      contractNumber: params.contractNumber,
+      clientType: params.clientType,
+      email: params.email,
+      password: params.password,
       city: params.city,
       isActive: params.isActive,
     );
@@ -45,7 +51,9 @@ final updateCompanyProvider =
     final repository = ref.read(companyRepositoryProvider);
     final company = params.company.copyWith(
       name: params.name,
-      contractNumber: params.contractNumber,
+      clientType: params.clientType,
+      email: params.email,
+      password: params.password,
       city: params.city,
       isActive: params.isActive,
     );
@@ -58,11 +66,30 @@ final deleteCompanyProvider = Provider.family<Future<void>, String>(
   (ref, companyId) async {
     final repository = ref.read(companyRepositoryProvider);
     final bookingRepository = BookingRepository();
+    final vehicleRepository = VehicleRepository();
     
-    // Delete all bookings for this company first
+    // Delete all related data for this company
     await bookingRepository.deleteBookingsByCompany(companyId);
+    await vehicleRepository.deleteVehiclesByCompany(companyId);
     
-    // Then delete the company
+    // Delete the company user account if it exists
+    try {
+      final usersSnapshot = await FirebaseFirestore.instance
+          .collection(FirestorePaths.users)
+          .where('companyId', isEqualTo: companyId)
+          .get();
+      
+      final batch = FirebaseFirestore.instance.batch();
+      for (final doc in usersSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    } catch (e) {
+      // Log but don't fail if user deletion fails
+      debugPrint('Warning: Failed to delete company users: $e');
+    }
+    
+    // Finally delete the company
     return repository.deleteCompany(companyId);
   },
 );
@@ -70,13 +97,17 @@ final deleteCompanyProvider = Provider.family<Future<void>, String>(
 /// Create company parameters
 class CreateCompanyParams {
   final String name;
-  final String contractNumber;
+  final ClientType clientType;
+  final String email;
+  final String password;
   final String city;
   final bool isActive;
 
   const CreateCompanyParams({
     required this.name,
-    required this.contractNumber,
+    required this.clientType,
+    required this.email,
+    required this.password,
     required this.city,
     this.isActive = true,
   });
@@ -86,14 +117,18 @@ class CreateCompanyParams {
 class UpdateCompanyParams {
   final CompanyModel company;
   final String name;
-  final String contractNumber;
+  final ClientType clientType;
+  final String email;
+  final String password;
   final String city;
   final bool isActive;
 
   const UpdateCompanyParams({
     required this.company,
     required this.name,
-    required this.contractNumber,
+    required this.clientType,
+    required this.email,
+    required this.password,
     required this.city,
     required this.isActive,
   });

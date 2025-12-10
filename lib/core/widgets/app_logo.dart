@@ -6,15 +6,31 @@ class AppLogo extends StatelessWidget {
     super.key,
     this.height = 40,
     this.width,
+    this.withText = false, // Default to no text for headers
+    this.isWhite = false,
   });
 
   final double height;
   final double? width;
+  final bool withText;
+  final bool isWhite;
 
   @override
   Widget build(BuildContext context) {
+    // Determine which logo variant to use
+    String logoPath;
+    if (withText) {
+      logoPath = isWhite
+          ? 'assets/images/beear-cars-wash-white.png'
+          : 'assets/images/beear-cars-wash.png';
+    } else {
+      logoPath = isWhite
+          ? 'assets/images/beear-cars-wash-no-text-white.png'
+          : 'assets/images/beear-cars-wash-no-text.png';
+    }
+
     return Image.asset(
-      'assets/images/logo.png',
+      logoPath,
       height: height,
       width: width ?? height,
       fit: BoxFit.contain,
