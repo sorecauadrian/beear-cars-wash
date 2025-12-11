@@ -87,7 +87,7 @@ class _CompaniesListScreenState extends ConsumerState<CompaniesListScreen> {
                     ? allCompanies
                     : allCompanies.where((c) => c.clientType == _selectedFilter).toList();
 
-                if (companies.isEmpty) {
+          if (companies.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -198,26 +198,26 @@ class _CompaniesListScreenState extends ConsumerState<CompaniesListScreen> {
               },
             ),
           );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                    const SizedBox(height: 16),
-                    Text('Eroare: $error'),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        ref.invalidate(allCompaniesProvider);
-                      },
-                      child: const Text('Încearcă din nou'),
-                    ),
-                  ],
-                ),
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text('Eroare: $error'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  ref.invalidate(allCompaniesProvider);
+                },
+                child: const Text('Încearcă din nou'),
               ),
-            ),
+            ],
+          ),
+        ),
+      ),
           ),
         ],
       ),
@@ -234,9 +234,9 @@ class _CompaniesListScreenState extends ConsumerState<CompaniesListScreen> {
           ),
           const SizedBox(height: 12),
           FloatingActionButton.extended(
-            onPressed: () {
+        onPressed: () {
               context.push('${RouteNames.addCompany}?type=fizica');
-            },
+        },
             icon: const Icon(Icons.person),
             label: const Text('Persoană Fizică'),
             heroTag: 'add_fizica',
@@ -290,10 +290,10 @@ class _CompaniesListScreenState extends ConsumerState<CompaniesListScreen> {
                 await ref.read(deleteProvider);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
+                    const SnackBar(
                     content: Text('Clientul a fost șters cu succes'),
-                    backgroundColor: Colors.green,
-                  ),
+                      backgroundColor: Colors.green,
+                    ),
                   );
                 }
               } catch (e) {
