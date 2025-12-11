@@ -32,10 +32,30 @@ class AuthRepository {
       }
 
       // Fetch user data from Firestore
-      return await getUserData(credential.user!.uid);
+      final user = await getUserData(credential.user!.uid);
+      
+      // Validate that the company still exists (if user has a companyId)
+      if (user.companyId != null && user.companyId!.isNotEmpty) {
+        final companyDoc = await _firestore
+            .collection(FirestorePaths.companies)
+            .doc(user.companyId!)
+            .get();
+        
+        if (!companyDoc.exists) {
+          // Company doesn't exist, sign out and throw error
+          await _auth.signOut();
+          throw Exception('Contul este asociat cu o companie care nu mai există. Te rugăm să contactezi administratorul.');
+        }
+      }
+      
+      return user;
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
     } catch (e) {
+      // Re-throw as-is if it's already an Exception with a message
+      if (e is Exception) {
+        rethrow;
+      }
       throw Exception('Sign in failed: ${e.toString()}');
     }
   }

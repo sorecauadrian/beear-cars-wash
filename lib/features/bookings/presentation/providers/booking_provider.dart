@@ -84,8 +84,20 @@ final myBookingsProvider = StreamProvider<List<BookingModel>>((ref) {
 
 /// Get all bookings (for admin)
 final allBookingsProvider = StreamProvider<List<BookingModel>>((ref) {
+  final userAsync = ref.watch(currentUserProvider);
   final repository = ref.watch(bookingRepositoryProvider);
-  return repository.getAllBookingsStream();
+
+  return userAsync.when(
+    data: (user) {
+      // Only proceed if user is loaded (needed for Firestore rules to check admin role)
+      if (user == null) {
+        return Stream.value([]);
+      }
+      return repository.getAllBookingsStream();
+    },
+    loading: () => Stream.value([]), // Return empty stream while loading
+    error: (_, __) => Stream.value([]), // Return empty stream on error
+  );
 });
 
 /// Get bookings with filters (for admin)

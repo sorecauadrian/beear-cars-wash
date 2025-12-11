@@ -388,13 +388,21 @@ class _AdminBookingsListScreenState
                     const Icon(Icons.error_outline,
                         size: 64, color: Colors.red),
                     const SizedBox(height: 16),
-                    Text('Error: $error'),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Text(
+                        'Eroare: $error',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () {
                         ref.invalidate(allBookingsProvider);
+                        ref.invalidate(allCompaniesProvider);
                       },
-                      child: const Text('Retry'),
+                      child: const Text('Reîncearcă'),
                     ),
                   ],
                 ),
