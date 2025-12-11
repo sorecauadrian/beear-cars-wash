@@ -49,7 +49,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Vehicle added successfully'),
+          content: Text('Mașina a fost adăugată cu succes'),
           backgroundColor: Colors.green,
         ),
       );
@@ -77,7 +77,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Vehicle'),
+        title: const Text('Adaugă Mașină'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -89,8 +89,8 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               TextFormField(
                 controller: _plateController,
                 decoration: const InputDecoration(
-                  labelText: 'Plate Number *',
-                  hintText: 'Enter plate number',
+                  labelText: 'Număr înmatriculare *',
+                  hintText: 'Introdu numărul de înmatriculare',
                   prefixIcon: Icon(Icons.confirmation_number),
                 ),
                 textCapitalization: TextCapitalization.characters,
@@ -102,8 +102,8 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(
-                  labelText: 'Description (Optional)',
-                  hintText: 'Vehicle description, model, color, etc.',
+                  labelText: 'Descriere (Opțional)',
+                  hintText: 'Descrierea vehiculului, modelul, culoarea, etc.',
                   prefixIcon: Icon(Icons.description),
                 ),
                 maxLines: 3,
@@ -124,7 +124,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
-                    : const Text('Save Vehicle'),
+                    : const Text('Salvează Mașina'),
               ),
             ],
           ),

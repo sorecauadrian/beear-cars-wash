@@ -8,6 +8,7 @@ import '../../../../../core/utils/date_time_utils.dart';
 import '../../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../../features/companies/data/repositories/company_repository.dart';
 import '../../../../../features/companies/data/models/company_model.dart';
+import '../../../../../features/companies/presentation/providers/company_provider.dart';
 import '../../../../vehicles/data/repositories/vehicle_repository.dart';
 import '../../../../vehicles/data/models/vehicle_model.dart';
 import '../../../data/models/booking_model.dart';
@@ -31,17 +32,17 @@ class _AdminBookingsListScreenState
   String? _selectedDate;
   BookingStatus? _selectedStatus;
   bool _showCompleted = false;
-  final _companiesAsync = FutureProvider<List<CompanyModel>>((ref) async {
-    final repository = CompanyRepository();
-    return repository.getAllCompanies();
-  });
+  // REMOVE: final _companiesAsync = FutureProvider<List<CompanyModel>>((ref) async {
+  // REMOVE:   final repository = CompanyRepository();
+  // REMOVE:   return repository.getAllCompanies();
+  // REMOVE: });
 
   @override
   Widget build(BuildContext context) {
     // Wait for user data to be loaded to avoid permission errors on first load
     final userAsync = ref.watch(currentUserProvider);
     final bookingsAsync = ref.watch(allBookingsProvider);
-    final companiesAsync = ref.watch(_companiesAsync);
+    final companiesAsync = ref.watch(allCompaniesProvider);
     
     // Show loading if user data is not yet loaded (prevents permission errors)
     if (userAsync.isLoading) {
@@ -52,7 +53,7 @@ class _AdminBookingsListScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const AppLogo(height: 32),
+        title: const AppLogo(height: 32, withText: false),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),

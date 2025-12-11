@@ -17,7 +17,7 @@ class CustomerHomeScreen extends ConsumerWidget {
     
     return Scaffold(
       appBar: AppBar(
-        title: const AppLogo(height: 32, withText: true),
+        title: const AppLogo(height: 32, withText: false),
       ),
       drawer: _buildDrawer(context, ref, currentRoute),
       body: const CustomerBookingsListScreen(),
