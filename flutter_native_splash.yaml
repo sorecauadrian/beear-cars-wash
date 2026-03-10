@@ -1,14 +1,12 @@
 flutter_native_splash:
-  color: "#E93A1F"  # Primary red to match animated splash
-  image: assets/images/beear-cars-wash-no-text.png
+  color: "#E93A1F"
+  image: assets/images/beear-cars-wash-no-text-padded.png
   android: true
   ios: true
-  # Add padding to prevent logo from being cut off
   fullscreen: false
   android_12:
-    image: assets/images/beear-cars-wash-no-text.png
+    image: assets/images/beear-cars-wash-no-text-padded.png
     color: "#E93A1F"
     icon_background_color: "#E93A1F"
-    # Add padding for Android 12+
-    image_dark: assets/images/beear-cars-wash-no-text.png
+    image_dark: assets/images/beear-cars-wash-no-text-padded.png
 

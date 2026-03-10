@@ -109,7 +109,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Profil actualizat cu succes'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
         ),
       );
     } catch (e) {
@@ -118,7 +118,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Eroare: ${e.toString().replaceFirst('Exception: ', '')}'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     } finally {
@@ -135,7 +135,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Introdu parola nouă'),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warning,
         ),
       );
       return;
@@ -145,7 +145,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Parolele nu se potrivesc'),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warning,
         ),
       );
       return;
@@ -155,7 +155,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Parola trebuie să aibă cel puțin 6 caractere'),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warning,
         ),
       );
       return;
@@ -182,7 +182,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Parolă actualizată cu succes'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
         ),
       );
     } catch (e) {
@@ -196,7 +196,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMessage),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     } finally {
@@ -425,7 +425,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                                         scaffoldMessenger?.showSnackBar(
                                           const SnackBar(
                                             content: Text('Eroare la actualizarea setărilor'),
-                                            backgroundColor: Colors.red,
+                                            backgroundColor: AppColors.error,
                                           ),
                                         );
                                       }
@@ -446,7 +446,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const Icon(Icons.error_outline, size: 64, color: AppColors.error),
               const SizedBox(height: 16),
               Text('Eroare: $error'),
             ],

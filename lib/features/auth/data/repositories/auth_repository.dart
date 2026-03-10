@@ -60,6 +60,15 @@ class AuthRepository {
     }
   }
 
+  /// Send password reset email
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email.trim());
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    }
+  }
+
   /// Sign out
   Future<void> signOut() async {
     // Clear notification service user ID
@@ -97,7 +106,7 @@ class AuthRepository {
     });
   }
 
-  /// Handle Firebase Auth exceptions and return user-friendly messages
+  /// Handle Firebase Auth exceptions and return user-friendly messages (Romanian)
   Exception _handleAuthException(FirebaseAuthException e) {
     String message;
     switch (e.code) {
@@ -106,6 +115,10 @@ class AuthRepository {
         break;
       case 'wrong-password':
         message = 'Parolă incorectă.';
+        break;
+      case 'invalid-credential':
+      case 'invalid-login-credentials':
+        message = 'Email sau parolă incorectă. Verifică datele și încearcă din nou.';
         break;
       case 'invalid-email':
         message = 'Adresă de email invalidă.';
@@ -126,7 +139,7 @@ class AuthRepository {
         message = 'Există deja un cont cu acest email.';
         break;
       default:
-        message = 'Autentificare eșuată: ${e.message ?? 'Eroare necunoscută'}';
+        message = 'Autentificare eșuată. Te rugăm să încerci din nou.';
     }
     return Exception(message);
   }

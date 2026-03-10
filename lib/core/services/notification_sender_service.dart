@@ -181,42 +181,40 @@ class NotificationSenderService {
     }
   }
 
-  /// Get notification title based on status
   String _getNotificationTitle(BookingStatus status) {
     switch (status) {
       case BookingStatus.accepted:
-        return 'Booking Accepted';
+        return 'Rezervare acceptată';
       case BookingStatus.rejected:
-        return 'Booking Rejected';
+        return 'Rezervare respinsă';
       case BookingStatus.cancelled:
-        return 'Booking Cancelled';
+        return 'Rezervare anulată';
       case BookingStatus.inProgress:
         return 'Spălarea a început';
       case BookingStatus.done:
         return 'Spălarea este finalizată';
       case BookingStatus.requested:
-        return 'New Booking Request';
+        return 'Rezervare nouă';
     }
   }
 
-  /// Get notification body based on booking and status
   String _getNotificationBody(BookingModel booking, BookingStatus status) {
     final date = booking.date;
     final time = booking.slotStart;
     
     switch (status) {
       case BookingStatus.accepted:
-        return 'Your booking for $date at $time has been accepted.';
+        return 'Rezervarea ta pentru $date la $time a fost acceptată.';
       case BookingStatus.rejected:
-        return 'Your booking for $date at $time has been rejected.';
+        return 'Rezervarea ta pentru $date la $time a fost respinsă. Te rugăm să ne contactezi.';
       case BookingStatus.cancelled:
-        return 'Your booking for $date at $time has been cancelled. Please contact us if you have any questions.';
+        return 'Rezervarea ta pentru $date la $time a fost anulată. Te rugăm să ne contactezi dacă ai întrebări.';
       case BookingStatus.inProgress:
-        return 'Spălarea mașinii tale pentru $date la $time a început. Te rugăm să te prezinți la mașină.';
+        return 'Spălarea mașinii tale pentru $date la $time a început.';
       case BookingStatus.done:
-        return 'Spălarea mașinii tale pentru $date la $time este finalizată. Poți veni să o ridici.';
+        return 'Spălarea mașinii tale pentru $date la $time este finalizată.';
       case BookingStatus.requested:
-        return 'Your booking for $date at $time has been submitted.';
+        return 'Rezervarea ta pentru $date la $time a fost înregistrată. Așteptăm confirmarea.';
     }
   }
 }

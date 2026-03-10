@@ -1,39 +1,48 @@
-/// Input validation utilities
+/// Input validation utilities (Romanian messages)
 class Validators {
   Validators._();
 
   static String? email(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Email is required';
+      return 'Emailul este obligatoriu';
     }
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegex.hasMatch(value)) {
-      return 'Please enter a valid email';
+      return 'Introdu o adresă de email validă';
     }
     return null;
   }
 
-  static String? required(String? value, {String fieldName = 'This field'}) {
+  static String? required(String? value, {String fieldName = 'Câmpul'}) {
     if (value == null || value.isEmpty) {
-      return '$fieldName is required';
+      return '$fieldName este obligatoriu';
     }
     return null;
   }
 
-  static String? minLength(String? value, int min, {String fieldName = 'This field'}) {
+  static String? minLength(String? value, int min, {String fieldName = 'Câmpul'}) {
     if (value == null || value.length < min) {
-      return '$fieldName must be at least $min characters';
+      return '$fieldName trebuie să aibă cel puțin $min caractere';
+    }
+    return null;
+  }
+
+  static String? password(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Parola este obligatorie';
+    }
+    if (value.length < 6) {
+      return 'Parola trebuie să aibă cel puțin 6 caractere';
     }
     return null;
   }
 
   static String? plateNumber(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Plate number is required';
+      return 'Numărul de înmatriculare este obligatoriu';
     }
-    // Basic validation - can be enhanced for Romanian plates
     if (value.length < 2) {
-      return 'Plate number is too short';
+      return 'Numărul de înmatriculare este prea scurt';
     }
     return null;
   }

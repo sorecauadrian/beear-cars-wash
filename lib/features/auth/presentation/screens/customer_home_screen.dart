@@ -3,164 +3,255 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/routing/route_names.dart';
 import '../../../../core/widgets/app_logo.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/constants/app_icons.dart';
+import '../../../../core/utils/date_time_utils.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
-import '../../../../features/bookings/presentation/screens/customer/customer_bookings_list_screen.dart';
+import '../../../../features/bookings/data/models/booking_model.dart';
+import '../../../../features/bookings/presentation/providers/booking_provider.dart';
+import '../../../../shared/widgets/booking_card.dart';
+import '../../../../shared/widgets/empty_state.dart';
+import '../../../../shared/widgets/skeleton_loader.dart';
+import '../../../../shared/widgets/stat_card.dart';
+import '../../../../shared/widgets/section_header.dart';
+import '../../../../features/vehicles/data/repositories/vehicle_repository.dart';
+import '../../../../features/vehicles/data/models/vehicle_model.dart';
 import 'package:go_router/go_router.dart';
 
-/// Customer home screen - shows reservations by default
 class CustomerHomeScreen extends ConsumerWidget {
   const CustomerHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentRoute = GoRouterState.of(context).uri.toString();
-    
+    final userAsync = ref.watch(currentUserProvider);
+    final bookingsAsync = ref.watch(myBookingsProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: const AppLogo(height: 32, withText: false),
+        title: const AppLogo(height: 28, withText: true),
+        actions: [
+          IconButton(
+            icon: const Icon(AppIcons.logout, size: 22),
+            tooltip: 'Deconectare',
+            onPressed: () async {
+              final authRepo = ref.read(authRepositoryProvider);
+              await authRepo.signOut();
+              if (context.mounted) context.go(RouteNames.login);
+            },
+          ),
+        ],
       ),
-      drawer: _buildDrawer(context, ref, currentRoute),
-      body: const CustomerBookingsListScreen(),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          context.push(RouteNames.createBooking);
+      body: RefreshIndicator(
+        onRefresh: () async => ref.invalidate(myBookingsProvider),
+        child: CustomScrollView(
+          slivers: [
+            // Greeting
+            SliverToBoxAdapter(
+              child: _buildGreeting(context, userAsync),
+            ),
+
+            // Stats
+            SliverToBoxAdapter(
+              child: _buildStats(context, bookingsAsync),
+            ),
+
+            // Upcoming section
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.lg),
+                child: SectionHeader(
+                  title: 'REZERVĂRI ACTIVE',
+                  trailing: 'Vezi toate',
+                  onTrailingTap: () {},
+                ),
+              ),
+            ),
+
+            // Bookings list
+            _buildBookingsList(context, ref, bookingsAsync),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          ],
+        ),
+      ),
+      floatingActionButton: bookingsAsync.whenOrNull(
+        data: (bookings) {
+          final hasActive = bookings.any((b) =>
+            b.status != BookingStatus.done &&
+            b.status != BookingStatus.rejected &&
+            b.status != BookingStatus.cancelled
+          );
+          if (!hasActive) return null;
+          return FloatingActionButton.extended(
+            onPressed: () => context.push(RouteNames.createBooking),
+            icon: const Icon(AppIcons.newBooking),
+            label: const Text('Rezervare nouă'),
+          );
         },
-        icon: const Icon(Icons.add_shopping_cart),
-        label: const Text('Rezervare nouă'),
       ),
     );
   }
 
-  Widget _buildDrawer(BuildContext context, WidgetRef ref, String currentRoute) {
-    final userAsync = ref.watch(currentUserProvider);
-    
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
+  Widget _buildGreeting(BuildContext context, AsyncValue userAsync) {
+    final name = userAsync.whenOrNull<String?>(
+      data: (user) => user?.name,
+    );
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.lg, AppSpacing.md, AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          DrawerHeader(
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-            ),
-            child: userAsync.when(
-              data: (user) => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Row(
-                    children: [
-                      const AppLogo(height: 32, isWhite: true),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          user?.name ?? 'Client',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              ),
-              error: (_, __) => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  const AppLogo(height: 32, isWhite: true),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Client',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
+          Text(
+            'Bună${name != null ? ', $name' : ''}! 👋',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w700,
             ),
           ),
-          _buildDrawerItem(
-            context: context,
-            icon: Icons.event,
-            title: 'Rezervările mele',
-            isSelected: currentRoute == RouteNames.companyHome,
-            onTap: () {
-              Navigator.pop(context);
-              if (currentRoute != RouteNames.companyHome) {
-                context.go(RouteNames.companyHome);
-              }
-            },
-          ),
-          _buildDrawerItem(
-            context: context,
-            icon: Icons.directions_car,
-            title: 'Mașinile mele',
-            isSelected: currentRoute == RouteNames.vehiclesList,
-            onTap: () {
-              Navigator.pop(context);
-              context.push(RouteNames.vehiclesList);
-            },
-          ),
-          _buildDrawerItem(
-            context: context,
-            icon: Icons.settings,
-            title: 'Setări',
-            isSelected: currentRoute == RouteNames.customerSettings,
-            onTap: () {
-              Navigator.pop(context);
-              context.push(RouteNames.customerSettings);
-            },
-          ),
-          const Divider(),
-          _buildDrawerItem(
-            context: context,
-            icon: Icons.logout,
-            title: 'Deconectare',
-            isSelected: false,
-            onTap: () async {
-              Navigator.pop(context);
-              final authRepo = ref.read(authRepositoryProvider);
-              await authRepo.signOut();
-              if (context.mounted) {
-                context.go(RouteNames.login);
-              }
-            },
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Gestionează rezervările tale',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDrawerItem({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: isSelected ? AppColors.primary : null,
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? AppColors.primary : null,
+  Widget _buildStats(BuildContext context, AsyncValue<List<BookingModel>> bookingsAsync) {
+    return bookingsAsync.when(
+      data: (bookings) {
+        final active = bookings.where((b) =>
+          b.status != BookingStatus.done &&
+          b.status != BookingStatus.rejected &&
+          b.status != BookingStatus.cancelled
+        ).length;
+        final completed = bookings.where((b) => b.status == BookingStatus.done).length;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          child: Row(
+            children: [
+              Expanded(
+                child: StatCard(
+                  icon: Icons.schedule_rounded,
+                  label: 'Active',
+                  value: '$active',
+                  color: AppColors.statusAccepted,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: StatCard(
+                  icon: Icons.task_alt_rounded,
+                  label: 'Finalizate',
+                  value: '$completed',
+                  color: AppColors.statusSuccess,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        child: Row(
+          children: [
+            Expanded(child: SkeletonLoader(height: 100, borderRadius: AppSpacing.radiusLg)),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(child: SkeletonLoader(height: 100, borderRadius: AppSpacing.radiusLg)),
+          ],
         ),
       ),
-      selected: isSelected,
-      selectedTileColor: AppColors.primary.withValues(alpha: 0.1),
-      onTap: onTap,
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildBookingsList(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<List<BookingModel>> bookingsAsync,
+  ) {
+    return bookingsAsync.when(
+      data: (bookings) {
+        final active = bookings.where((b) =>
+          b.status != BookingStatus.done &&
+          b.status != BookingStatus.rejected &&
+          b.status != BookingStatus.cancelled
+        ).toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
+
+        if (active.isEmpty) {
+          return SliverFillRemaining(
+            hasScrollBody: false,
+            child: EmptyState(
+              icon: Icons.event_available_rounded,
+              title: 'Nicio rezervare activă',
+              subtitle: 'Creează o rezervare nouă pentru a programa o spălare',
+              actionLabel: 'Rezervare nouă',
+              onAction: () => context.push(RouteNames.createBooking),
+            ),
+          );
+        }
+
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final booking = active[index];
+              return _BookingCardWithVehicle(booking: booking);
+            },
+            childCount: active.length,
+          ),
+        );
+      },
+      loading: () => SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (_, __) => const Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
+            child: SkeletonCard(),
+          ),
+          childCount: 3,
+        ),
+      ),
+      error: (error, _) => SliverFillRemaining(
+        hasScrollBody: false,
+        child: EmptyState(
+          icon: Icons.error_outline_rounded,
+          title: 'Eroare la încărcarea rezervărilor',
+          subtitle: error.toString(),
+          actionLabel: 'Încearcă din nou',
+          onAction: () => ref.invalidate(myBookingsProvider),
+        ),
+      ),
     );
   }
 }
 
+class _BookingCardWithVehicle extends StatelessWidget {
+  final BookingModel booking;
+
+  const _BookingCardWithVehicle({required this.booking});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<VehicleModel?>(
+      future: _getVehicle(booking.vehicleId),
+      builder: (context, snap) {
+        return BookingCard(
+          booking: booking,
+          vehiclePlate: snap.data?.plateNumber,
+        );
+      },
+    );
+  }
+
+  Future<VehicleModel?> _getVehicle(String id) async {
+    try {
+      return await VehicleRepository().getVehicleById(id);
+    } catch (_) {
+      return null;
+    }
+  }
+}

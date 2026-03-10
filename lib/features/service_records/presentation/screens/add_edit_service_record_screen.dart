@@ -85,7 +85,7 @@ class _AddEditServiceRecordScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Eroare la încărcare: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -114,7 +114,7 @@ class _AddEditServiceRecordScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Selectează compania și luna'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
       return;
@@ -127,7 +127,7 @@ class _AddEditServiceRecordScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Adaugă cel puțin un serviciu'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
       return;
@@ -171,7 +171,7 @@ class _AddEditServiceRecordScreenState
           content: Text(_isEditing
               ? 'Înregistrarea a fost actualizată'
               : 'Înregistrarea a fost creată'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
         ),
       );
 
@@ -182,7 +182,7 @@ class _AddEditServiceRecordScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     } finally {
@@ -209,7 +209,7 @@ class _AddEditServiceRecordScreenState
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('Șterge'),
           ),
         ],
@@ -228,7 +228,7 @@ class _AddEditServiceRecordScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Înregistrarea a fost ștearsă'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
         ),
       );
 
@@ -239,7 +239,7 @@ class _AddEditServiceRecordScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     } finally {
@@ -274,7 +274,7 @@ class _AddEditServiceRecordScreenState
         actions: _isEditing && !isReadOnly
             ? [
                 IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
+                  icon: const Icon(Icons.delete, color: AppColors.error),
                   onPressed: _handleDelete,
                 ),
               ]
@@ -375,7 +375,7 @@ class _AddEditServiceRecordScreenState
               _buildServiceCounter(
                 'Tapițerie',
                 _tapiterieWashes,
-                Colors.orange,
+                AppColors.warning,
                 Icons.chair,
                 isReadOnly,
               ),
@@ -434,7 +434,7 @@ class _AddEditServiceRecordScreenState
               // Finalize toggle
               if (_isEditing && !isReadOnly)
                 Card(
-                  color: Colors.orange.withValues(alpha: 0.1),
+                  color: AppColors.warning.withValues(alpha: 0.1),
                   child: SwitchListTile(
                     title: const Text('Finalizează înregistrarea'),
                     subtitle: const Text(

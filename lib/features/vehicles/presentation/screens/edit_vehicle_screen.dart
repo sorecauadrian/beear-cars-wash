@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/validators.dart';
 import '../../data/models/vehicle_model.dart';
 import '../../data/repositories/vehicle_repository.dart';
 import '../providers/vehicle_provider.dart';
 import 'package:go_router/go_router.dart';
 
-/// Edit vehicle screen
 class EditVehicleScreen extends ConsumerStatefulWidget {
   final String vehicleId;
 
-  const EditVehicleScreen({
-    super.key,
-    required this.vehicleId,
-  });
+  const EditVehicleScreen({super.key, required this.vehicleId});
 
   @override
   ConsumerState<EditVehicleScreen> createState() => _EditVehicleScreenState();
@@ -34,9 +31,7 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
 
   Future<void> _loadVehicle() async {
     try {
-      final repository = VehicleRepository();
-      final vehicle = await repository.getVehicleById(widget.vehicleId);
-      
+      final vehicle = await VehicleRepository().getVehicleById(widget.vehicleId);
       if (vehicle != null && mounted) {
         setState(() {
           _vehicle = vehicle;
@@ -45,20 +40,14 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
         });
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Vehicle not found'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: const Text('Mașina nu a fost găsită'), backgroundColor: AppColors.error),
         );
         context.pop();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading vehicle: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Eroare la încărcare: $e'), backgroundColor: AppColors.error),
         );
         context.pop();
       }
@@ -73,66 +62,41 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
   }
 
   Future<void> _handleSave() async {
-    if (!_formKey.currentState!.validate() || _vehicle == null) {
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
+    if (!_formKey.currentState!.validate() || _vehicle == null) return;
+    setState(() => _isLoading = true);
 
     try {
-      final updateProvider = updateVehicleProvider(
+      await ref.read(updateVehicleProvider(
         UpdateVehicleParams(
           vehicle: _vehicle!,
           plateNumber: _plateController.text.trim().toUpperCase(),
-          description: _descriptionController.text.trim().isEmpty
-              ? null
-              : _descriptionController.text.trim(),
+          description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
         ),
-      );
-      await ref.read(updateProvider);
+      ));
 
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vehicle updated successfully'),
-          backgroundColor: Colors.green,
-        ),
+        SnackBar(content: const Text('Mașina a fost actualizată'), backgroundColor: AppColors.success),
       );
-
       context.pop();
     } catch (e) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: AppColors.error),
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_vehicle == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Vehicle'),
-      ),
+      appBar: AppBar(title: const Text('Editează mașina')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -143,9 +107,9 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
               TextFormField(
                 controller: _plateController,
                 decoration: const InputDecoration(
-                  labelText: 'Plate Number *',
-                  hintText: 'Enter plate number',
-                  prefixIcon: Icon(Icons.confirmation_number),
+                  labelText: 'Număr înmatriculare *',
+                  hintText: 'Introdu numărul de înmatriculare',
+                  prefixIcon: Icon(Icons.confirmation_number_outlined),
                 ),
                 textCapitalization: TextCapitalization.characters,
                 validator: Validators.plateNumber,
@@ -155,9 +119,9 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(
-                  labelText: 'Description (Optional)',
-                  hintText: 'Vehicle description, model, color, etc.',
-                  prefixIcon: Icon(Icons.description),
+                  labelText: 'Descriere (Opțional)',
+                  hintText: 'Descrierea vehiculului, modelul, culoarea, etc.',
+                  prefixIcon: Icon(Icons.description_outlined),
                 ),
                 maxLines: 3,
                 enabled: !_isLoading,
@@ -165,19 +129,13 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _isLoading ? null : _handleSave,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
+                style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
                 child: _isLoading
                     ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
+                        height: 22, width: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)),
                       )
-                    : const Text('Update Vehicle'),
+                    : const Text('Salvează modificările'),
               ),
             ],
           ),
@@ -186,4 +144,3 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
     );
   }
 }
-

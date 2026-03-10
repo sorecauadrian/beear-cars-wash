@@ -223,6 +223,7 @@ class BookingModel {
       addressText: addressText ?? this.addressText,
       lat: lat ?? this.lat,
       lng: lng ?? this.lng,
+      description: description ?? this.description,
       date: date ?? this.date,
       slotStart: slotStart ?? this.slotStart,
       slotEnd: slotEnd ?? this.slotEnd,

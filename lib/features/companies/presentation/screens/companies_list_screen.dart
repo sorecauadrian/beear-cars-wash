@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/routing/route_names.dart';
-import '../../../../core/widgets/app_logo.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../providers/company_provider.dart';
 import '../../data/models/company_model.dart';
+import '../../../../shared/widgets/empty_state.dart';
+import '../../../../shared/widgets/skeleton_loader.dart';
 import 'package:go_router/go_router.dart';
 
-/// Companies list screen for admin
 class CompaniesListScreen extends ConsumerStatefulWidget {
   const CompaniesListScreen({super.key});
 
@@ -17,7 +18,7 @@ class CompaniesListScreen extends ConsumerStatefulWidget {
 }
 
 class _CompaniesListScreenState extends ConsumerState<CompaniesListScreen> {
-  ClientType? _selectedFilter; // null = all
+  ClientType? _selectedFilter;
 
   @override
   Widget build(BuildContext context) {
@@ -25,293 +26,187 @@ class _CompaniesListScreenState extends ConsumerState<CompaniesListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const AppLogo(height: 32),
-            const SizedBox(width: 8),
-            const Text('Clienți'),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              final authRepo = ref.read(authRepositoryProvider);
-              await authRepo.signOut();
-              if (context.mounted) {
-                context.go(RouteNames.login);
-              }
-            },
-          ),
-        ],
+        title: const Text('Clienți'),
       ),
       body: Column(
         children: [
-          // Filter section - horizontal scrollable buttons
+          // Filter chips
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            color: Colors.grey[50],
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  _buildFilterChip(
-                    label: 'Toți',
-                    isSelected: _selectedFilter == null,
-                    onTap: () => setState(() => _selectedFilter = null),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(
-                    label: ClientType.persoanaJuridica.displayName,
-                    isSelected: _selectedFilter == ClientType.persoanaJuridica,
-                    onTap: () => setState(() => _selectedFilter = ClientType.persoanaJuridica),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(
-                    label: ClientType.persoanaFizica.displayName,
-                    isSelected: _selectedFilter == ClientType.persoanaFizica,
-                    onTap: () => setState(() => _selectedFilter = ClientType.persoanaFizica),
-                  ),
-                ],
-              ),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              border: Border(bottom: BorderSide(color: AppColors.outline.withValues(alpha: 0.5))),
+            ),
+            child: Row(
+              children: [
+                _buildFilterChip('Toți', _selectedFilter == null, () => setState(() => _selectedFilter = null)),
+                const SizedBox(width: AppSpacing.sm),
+                _buildFilterChip('Juridică', _selectedFilter == ClientType.persoanaJuridica, () => setState(() => _selectedFilter = ClientType.persoanaJuridica)),
+                const SizedBox(width: AppSpacing.sm),
+                _buildFilterChip('Fizică', _selectedFilter == ClientType.persoanaFizica, () => setState(() => _selectedFilter = ClientType.persoanaFizica)),
+              ],
             ),
           ),
-          // Companies list
           Expanded(
             child: companiesAsync.when(
               data: (allCompanies) {
-                // Apply filter
                 final companies = _selectedFilter == null
                     ? allCompanies
                     : allCompanies.where((c) => c.clientType == _selectedFilter).toList();
 
-          if (companies.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.business_outlined,
-                    size: 64,
-                    color: Colors.grey,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    _selectedFilter == null
-                        ? 'Nu există clienți'
-                        : 'Nu există clienți de tip ${_selectedFilter!.displayName}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Folosește butoanele de mai jos pentru a adăuga clienți',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            );
-          }
+                if (companies.isEmpty) {
+                  return EmptyState(
+                    icon: Icons.business_outlined,
+                    title: _selectedFilter == null ? 'Niciun client' : 'Niciun client de tip ${_selectedFilter!.displayName}',
+                    subtitle: 'Adaugă un client nou folosind butonul de mai jos',
+                  );
+                }
 
-          return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(allCompaniesProvider);
-            },
-            child: ListView.builder(
-              itemCount: companies.length,
-              padding: const EdgeInsets.all(8),
-              itemBuilder: (context, index) {
-                final company = companies[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  child: ListTile(
-                    leading: Icon(
-                      company.isActive ? Icons.business : Icons.business_center,
-                      color: company.isActive ? Colors.green : Colors.grey,
-                    ),
-                    title: Text(
-                      company.name,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        decoration: company.isActive
-                            ? null
-                            : TextDecoration.lineThrough,
-                      ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Tip: ${company.clientType.displayName}'),
-                        Text('Email: ${company.email}'),
-                        Text('Oraș: ${company.city}'),
-                        Text(
-                          company.isActive ? 'Activă' : 'Inactivă',
-                          style: TextStyle(
-                            color: company.isActive ? Colors.green : Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                    trailing: PopupMenuButton(
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Row(
-                            children: [
-                              Icon(Icons.edit, size: 20),
-                              SizedBox(width: 8),
-                              Text('Editează'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete, size: 20, color: Colors.red),
-                              SizedBox(width: 8),
-                              Text('Șterge', style: TextStyle(color: Colors.red)),
-                            ],
-                          ),
-                        ),
-                      ],
-                      onSelected: (value) {
-                        if (value == 'edit') {
-                          context.push('${RouteNames.editCompany}/${company.id}');
-                        } else if (value == 'delete') {
-                          _showDeleteDialog(context, ref, company);
-                        }
-                      },
-                    ),
-                    onTap: () {
-                      context.push('${RouteNames.editCompany}/${company.id}');
-                    },
+                return RefreshIndicator(
+                  onRefresh: () async => ref.invalidate(allCompaniesProvider),
+                  child: ListView.builder(
+                    itemCount: companies.length,
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    itemBuilder: (context, index) => _buildCompanyCard(context, ref, companies[index]),
                   ),
                 );
               },
-            ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              Text('Eroare: $error'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  ref.invalidate(allCompaniesProvider);
-                },
-                child: const Text('Încearcă din nou'),
+              loading: () => ListView(children: List.generate(4, (_) => const SkeletonCard())),
+              error: (error, _) => EmptyState(
+                icon: Icons.error_outline_rounded,
+                title: 'Eroare',
+                subtitle: '$error',
+                actionLabel: 'Încearcă din nou',
+                onAction: () => ref.invalidate(allCompaniesProvider),
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
           ),
         ],
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton.extended(
-            onPressed: () {
-              context.push('${RouteNames.addCompany}?type=juridica');
-            },
-            icon: const Icon(Icons.business),
-            label: const Text('Persoană Juridică'),
-            heroTag: 'add_juridica',
-          ),
-          const SizedBox(height: 12),
-          FloatingActionButton.extended(
-        onPressed: () {
-              context.push('${RouteNames.addCompany}?type=fizica');
-        },
-            icon: const Icon(Icons.person),
-            label: const Text('Persoană Fizică'),
-            heroTag: 'add_fizica',
-          ),
-        ],
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push(RouteNames.addCompany),
+        icon: const Icon(Icons.add),
+        label: const Text('Client nou'),
       ),
     );
   }
 
-  Widget _buildFilterChip({
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildFilterChip(String label, bool isSelected, VoidCallback onTap) {
     return FilterChip(
       label: Text(label),
       selected: isSelected,
-      onSelected: (_) => onTap(),
-      selectedColor: AppColors.primary,
-      checkmarkColor: Colors.white,
+      onSelected: (_) {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      selectedColor: AppColors.accent.withValues(alpha: 0.15),
+      checkmarkColor: AppColors.accent,
       labelStyle: TextStyle(
-        color: isSelected ? Colors.white : Colors.black87,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        color: isSelected ? AppColors.accent : AppColors.onSurfaceVariant,
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     );
   }
 
-  void _showDeleteDialog(
-    BuildContext context,
-    WidgetRef ref,
-    CompanyModel company,
-  ) {
+  Widget _buildCompanyCard(BuildContext context, WidgetRef ref, CompanyModel company) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppSpacing.borderRadiusLg,
+        border: Border.all(color: AppColors.outline),
+        boxShadow: AppSpacing.shadowSm,
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+        leading: Container(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          decoration: BoxDecoration(
+            color: company.isActive ? AppColors.successLight : AppColors.surfaceVariant,
+            borderRadius: AppSpacing.borderRadiusSm,
+          ),
+          child: Icon(
+            company.clientType == ClientType.persoanaJuridica ? Icons.business_outlined : Icons.person_outline,
+            color: company.isActive ? AppColors.success : AppColors.onSurfaceVariant,
+          ),
+        ),
+        title: Text(
+          company.name,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            decoration: company.isActive ? null : TextDecoration.lineThrough,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(company.email, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceVariant)),
+            Text(company.city, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceVariant)),
+          ],
+        ),
+        trailing: PopupMenuButton(
+          itemBuilder: (_) => [
+            PopupMenuItem(
+              value: 'edit',
+              child: Row(children: [
+                Icon(Icons.edit_outlined, size: 20, color: AppColors.onSurfaceVariant),
+                const SizedBox(width: 12),
+                const Text('Editează'),
+              ]),
+            ),
+            PopupMenuItem(
+              value: 'delete',
+              child: Row(children: [
+                Icon(Icons.delete_outlined, size: 20, color: AppColors.error),
+                const SizedBox(width: 12),
+                Text('Șterge', style: TextStyle(color: AppColors.error)),
+              ]),
+            ),
+          ],
+          onSelected: (value) {
+            if (value == 'edit') {
+              context.push('${RouteNames.editCompany}/${company.id}');
+            } else if (value == 'delete') {
+              _showDeleteDialog(context, ref, company);
+            }
+          },
+        ),
+        onTap: () => context.push('${RouteNames.editCompany}/${company.id}'),
+      ),
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context, WidgetRef ref, CompanyModel company) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Șterge clientul'),
-        content: Text(
-          'Ești sigur că vrei să ștergi ${company.name}?',
-        ),
+        content: Text('Ești sigur că vrei să ștergi ${company.name}?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Anulează'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Anulează')),
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
               try {
-                final deleteProvider = deleteCompanyProvider(company.id);
-                await ref.read(deleteProvider);
+                await ref.read(deleteCompanyProvider(company.id));
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                    content: Text('Clientul a fost șters cu succes'),
-                      backgroundColor: Colors.green,
-                    ),
+                    SnackBar(content: const Text('Clientul a fost șters'), backgroundColor: AppColors.success),
                   );
                 }
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(e.toString().replaceFirst('Exception: ', '')),
-                      backgroundColor: Colors.red,
-                    ),
+                    SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: AppColors.error),
                   );
                 }
               }
             },
-            child: const Text('Șterge', style: TextStyle(color: Colors.red)),
+            child: Text('Șterge', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
     );
   }
 }
-

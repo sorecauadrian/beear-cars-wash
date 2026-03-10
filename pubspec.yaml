@@ -48,6 +48,7 @@ dependencies:
   path_provider: ^2.1.4
   share_plus: ^10.1.2
   month_year_picker: ^0.5.0+1
+  url_launcher: ^6.2.5
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +70,7 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/images/car-wash/
     - assets/fonts/
 
   # An image asset can refer to one or more resolution-specific "variants", see

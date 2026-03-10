@@ -1,9 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Client type enum
 enum ClientType {
-  persoanaFizica, // Individual
-  persoanaJuridica; // Legal entity/Company
+  persoanaFizica,
+  persoanaJuridica;
 
   static ClientType fromString(String value) {
     switch (value.toLowerCase().trim()) {
@@ -38,15 +37,23 @@ enum ClientType {
   }
 }
 
-/// Company model representing a client (individual or company)
 class CompanyModel {
   final String id;
   final String name;
   final ClientType clientType;
   final String email;
-  final String password; // Set by admin, stored in plain text (admin manages it)
+  final String password;
+  final String phone;
   final String city;
   final bool isActive;
+
+  // Romanian invoicing fields (Persoană Juridică)
+  final String? cui;
+  final String? nrRegCom;
+  final String? adresaSediu;
+  final String? judet;
+  final String? banca;
+  final String? iban;
 
   CompanyModel({
     required this.id,
@@ -54,11 +61,19 @@ class CompanyModel {
     required this.clientType,
     required this.email,
     required this.password,
+    this.phone = '',
     required this.city,
     required this.isActive,
+    this.cui,
+    this.nrRegCom,
+    this.adresaSediu,
+    this.judet,
+    this.banca,
+    this.iban,
   });
 
-  /// Create CompanyModel from Firestore document
+  bool get isPersoanaJuridica => clientType == ClientType.persoanaJuridica;
+
   factory CompanyModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return CompanyModel(
@@ -67,24 +82,36 @@ class CompanyModel {
       clientType: ClientType.fromString(data['clientType'] as String? ?? 'persoana_fizica'),
       email: data['email'] as String? ?? '',
       password: data['password'] as String? ?? '',
+      phone: data['phone'] as String? ?? '',
       city: data['city'] as String? ?? '',
       isActive: data['isActive'] as bool? ?? true,
+      cui: data['cui'] as String?,
+      nrRegCom: data['nrRegCom'] as String?,
+      adresaSediu: data['adresaSediu'] as String?,
+      judet: data['judet'] as String?,
+      banca: data['banca'] as String?,
+      iban: data['iban'] as String?,
     );
   }
 
-  /// Convert CompanyModel to Firestore map
   Map<String, dynamic> toFirestore() {
     return {
       'name': name,
       'clientType': clientType.toString(),
       'email': email,
       'password': password,
+      'phone': phone,
       'city': city,
       'isActive': isActive,
+      if (cui != null) 'cui': cui,
+      if (nrRegCom != null) 'nrRegCom': nrRegCom,
+      if (adresaSediu != null) 'adresaSediu': adresaSediu,
+      if (judet != null) 'judet': judet,
+      if (banca != null) 'banca': banca,
+      if (iban != null) 'iban': iban,
     };
   }
 
-  /// Create CompanyModel from map
   factory CompanyModel.fromMap(Map<String, dynamic> map) {
     return CompanyModel(
       id: map['id'] as String,
@@ -92,12 +119,18 @@ class CompanyModel {
       clientType: ClientType.fromString(map['clientType'] as String? ?? 'persoana_fizica'),
       email: map['email'] as String,
       password: map['password'] as String,
+      phone: map['phone'] as String? ?? '',
       city: map['city'] as String,
       isActive: map['isActive'] as bool,
+      cui: map['cui'] as String?,
+      nrRegCom: map['nrRegCom'] as String?,
+      adresaSediu: map['adresaSediu'] as String?,
+      judet: map['judet'] as String?,
+      banca: map['banca'] as String?,
+      iban: map['iban'] as String?,
     );
   }
 
-  /// Convert CompanyModel to map
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -105,8 +138,15 @@ class CompanyModel {
       'clientType': clientType.toString(),
       'email': email,
       'password': password,
+      'phone': phone,
       'city': city,
       'isActive': isActive,
+      'cui': cui,
+      'nrRegCom': nrRegCom,
+      'adresaSediu': adresaSediu,
+      'judet': judet,
+      'banca': banca,
+      'iban': iban,
     };
   }
 
@@ -116,8 +156,15 @@ class CompanyModel {
     ClientType? clientType,
     String? email,
     String? password,
+    String? phone,
     String? city,
     bool? isActive,
+    String? cui,
+    String? nrRegCom,
+    String? adresaSediu,
+    String? judet,
+    String? banca,
+    String? iban,
   }) {
     return CompanyModel(
       id: id ?? this.id,
@@ -125,9 +172,15 @@ class CompanyModel {
       clientType: clientType ?? this.clientType,
       email: email ?? this.email,
       password: password ?? this.password,
+      phone: phone ?? this.phone,
       city: city ?? this.city,
       isActive: isActive ?? this.isActive,
+      cui: cui ?? this.cui,
+      nrRegCom: nrRegCom ?? this.nrRegCom,
+      adresaSediu: adresaSediu ?? this.adresaSediu,
+      judet: judet ?? this.judet,
+      banca: banca ?? this.banca,
+      iban: iban ?? this.iban,
     );
   }
 }
-

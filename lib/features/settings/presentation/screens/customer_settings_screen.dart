@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/widgets/app_logo.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/data/models/user_model.dart';
+import '../../../companies/presentation/providers/company_provider.dart';
 
-/// Customer settings screen (view-only)
 class CustomerSettingsScreen extends ConsumerWidget {
   const CustomerSettingsScreen({super.key});
 
@@ -14,9 +14,7 @@ class CustomerSettingsScreen extends ConsumerWidget {
     final userAsync = ref.watch(currentUserProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const AppLogo(height: 32),
-      ),
+      appBar: AppBar(title: const Text('Setări')),
       body: userAsync.when(
         data: (user) {
           if (user == null) {
@@ -24,96 +22,56 @@ class CustomerSettingsScreen extends ConsumerWidget {
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.md),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Profile Section
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.person, color: AppColors.primary),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Profil',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        _buildInfoRow(
-                          context,
-                          label: 'Nume',
-                          value: user.name,
-                          icon: Icons.person_outline,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildInfoRow(
-                          context,
-                          label: 'Email',
-                          value: user.email,
-                          icon: Icons.email,
-                        ),
-                        if (user.companyId != null) ...[
-                          const SizedBox(height: 16),
-                          _buildInfoRow(
-                            context,
-                            label: 'ID Companie',
-                            value: user.companyId!,
-                            icon: Icons.business,
-                          ),
-                        ],
-                      ],
+                // Profile avatar
+                Center(
+                  child: CircleAvatar(
+                    radius: 40,
+                    backgroundColor: AppColors.accent.withValues(alpha: 0.1),
+                    child: Text(
+                      user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.w600, color: AppColors.accent),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                // Role Section
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.info, color: AppColors.primary),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Informații',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                const SizedBox(height: AppSpacing.md),
+                Center(
+                  child: Text(user.name, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
+                ),
+                Center(
+                  child: Text(user.email, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceVariant)),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+
+                // Info cards
+                _buildInfoCard(context, icon: Icons.person_outline, label: 'Nume', value: user.name),
+                _buildInfoCard(context, icon: Icons.email_outlined, label: 'Email', value: user.email),
+                if (user.companyId != null)
+                  _buildCompanyRoleCard(context, ref, user)
+                else
+                  _buildInfoCard(context, icon: Icons.badge_outlined, label: 'Rol', value: _getRoleDisplayName(user.role, null)),
+
+                const SizedBox(height: AppSpacing.lg),
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.infoLight,
+                    borderRadius: AppSpacing.borderRadiusMd,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, size: 20, color: AppColors.info),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          'Contactați administratorul pentru modificări la contul dumneavoastră.',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.info),
                         ),
-                        const SizedBox(height: 16),
-                        _buildInfoRow(
-                          context,
-                          label: 'Rol',
-                          value: _getRoleDisplayName(user.role),
-                          icon: Icons.badge,
-                        ),
-                        const SizedBox(height: 16),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            'Notă: Aceste informații sunt doar pentru vizualizare. Contactați administratorul pentru modificări.',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -121,57 +79,62 @@ class CustomerSettingsScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Text('Eroare la încărcarea datelor: $error'),
-        ),
+        error: (error, _) => Center(child: Text('Eroare: $error')),
       ),
     );
   }
 
-  Widget _buildInfoRow(
-    BuildContext context, {
-    required String label,
-    required String value,
-    required IconData icon,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 20, color: Colors.grey[600]),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+  Widget _buildInfoCard(BuildContext context, {required IconData icon, required String label, required String value}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppSpacing.borderRadiusMd,
+        border: Border.all(color: AppColors.outline),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: AppColors.onSurfaceVariant),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceVariant)),
+                const SizedBox(height: 2),
+                Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  String _getRoleDisplayName(UserRole role) {
+  Widget _buildCompanyRoleCard(BuildContext context, WidgetRef ref, UserModel user) {
+    final companyAsync = ref.watch(companyByIdProvider(user.companyId!));
+    return companyAsync.when(
+      data: (company) {
+        final role = _getRoleDisplayName(user.role, company?.clientType.toString());
+        return _buildInfoCard(context, icon: Icons.badge_outlined, label: 'Rol', value: role);
+      },
+      loading: () => _buildInfoCard(context, icon: Icons.badge_outlined, label: 'Rol', value: '...'),
+      error: (_, __) => _buildInfoCard(context, icon: Icons.badge_outlined, label: 'Rol', value: _getRoleDisplayName(user.role, null)),
+    );
+  }
+
+  String _getRoleDisplayName(UserRole role, String? clientType) {
     switch (role) {
       case UserRole.companyAdmin:
-        return 'Administrator Companie';
+        if (clientType == 'persoana_juridica') {
+          return 'Administrator Companie';
+        }
+        return 'Client';
       case UserRole.companyWorker:
-        return 'Angajat Companie';
+        return 'Angajat';
       case UserRole.admin:
         return 'Administrator';
     }
   }
 }
-

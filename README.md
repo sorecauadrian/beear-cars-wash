@@ -47,6 +47,12 @@ The application serves multiple user types:
    - See booking history and completed services
    - Real-time status updates (Requested, Accepted, In Progress, Done, Rejected)
    - Access service records and invoices (for both client types)
+   - Default view shows "My Reservations" (no tabs)
+
+4. **Settings & Profile**
+   - View-only settings screen showing account details
+   - View name, email, company ID, and role
+   - Accessible via drawer menu
 
 ### For Service Providers (Beear Admin)
 
@@ -88,13 +94,33 @@ The application serves multiple user types:
    - Filter service records by company and month
    - View service statistics and trends
    - Export data for accounting and reporting purposes
+   - Month-only picker for invoice filtering
+   - Company and month filters on separate rows for better UI
+
+6. **Account Management**
+   - Update admin profile (name, email)
+   - Change password securely
+   - Toggle notification preferences
+   - Persistent login (stay logged in across app sessions)
+   - Automatic user account creation when creating companies
+   - Cascading deletion (deleting company removes all associated data)
+   - Login validation (prevents login for deleted companies)
+
+7. **Data Cleanup & Maintenance**
+   - Automatic detection of orphaned bookings (bookings with non-existent companies)
+   - One-click cleanup of orphaned data
+   - Visual warnings for data inconsistencies
 
 ## Key Features
 
 ### 🔐 Authentication & Security
 - Secure email/password authentication via Firebase
 - Role-based access control (Admin, Company Admin, Company Worker)
+- Persistent login (automatic session management)
 - User session management
+- Login validation (prevents access to deleted company accounts)
+- Automatic user account creation for new companies
+- Cascading data deletion (company deletion removes all related data)
 
 ### 🚗 Vehicle Management
 - **Corporate Clients**: Multi-vehicle fleet support per company
@@ -121,18 +147,28 @@ The application serves multiple user types:
 - Export to PDF and Excel formats
 - **Corporate Clients**: Professional monthly invoices for accounting
 - **Individual Clients**: Service records and receipts
+- Month-only picker for filtering (no date selection needed)
+- Company and month filters for precise record lookup
+- Enhanced export modal with visual format selection
+- NotoSans font for proper Romanian character display in PDFs
+- Centered empty state messages
 
 ### 📱 Real-time Updates
 - Push notifications for booking status changes
 - Real-time data synchronization via Firestore
 - Instant status updates across devices
+- Configurable notification preferences (admin can enable/disable)
 
 ### 🎨 Modern UI/UX
 - Material Design 3 interface
 - Branded color scheme matching company identity
 - Animated splash screen
 - Intuitive navigation and user flows
+- Drawer navigation menu for both admin and clients
+- Personalized drawer headers (shows user name)
+- Consistent logo usage throughout the app
 - Responsive design for various screen sizes
+- Romanian language localization throughout
 
 ### 📍 Location Services
 - Google Maps integration
@@ -187,6 +223,8 @@ The application serves multiple user types:
 ### Localization
 - **Intl** - Internationalization and date formatting
 - **Flutter Localizations** - Romanian language support
+- Full Romanian translation of all user-facing text
+- Custom month picker with Romanian localization
 
 ### UI Components
 - **Material Icons** - Icon library
@@ -302,15 +340,20 @@ lib/
 
 The application is fully functional with all core features implemented:
 - ✅ User authentication and role management
+- ✅ Persistent login (automatic session management)
 - ✅ Vehicle fleet management
 - ✅ Booking creation and management
 - ✅ Service tracking and status updates
 - ✅ Automated service record calculation
 - ✅ Professional invoice generation (PDF/Excel)
 - ✅ Pricing management
-- ✅ Company management
+- ✅ Company management (with automatic user account creation)
+- ✅ Settings and profile management
+- ✅ Notification preferences
 - ✅ Real-time notifications
-- ✅ Modern, branded UI/UX
+- ✅ Data cleanup tools (orphaned booking detection)
+- ✅ Modern, branded UI/UX with drawer navigation
+- ✅ Full Romanian localization
 
 ## Getting Started
 

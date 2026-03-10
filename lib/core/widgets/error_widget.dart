@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+
 /// Reusable error widget
 class ErrorDisplay extends StatelessWidget {
   const ErrorDisplay({
@@ -22,7 +24,7 @@ class ErrorDisplay extends StatelessWidget {
             const Icon(
               Icons.error_outline,
               size: 64,
-              color: Colors.red,
+              color: AppColors.error,
             ),
             const SizedBox(height: 16),
             Text(

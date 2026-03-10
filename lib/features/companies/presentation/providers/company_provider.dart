@@ -35,7 +35,6 @@ final createCompanyProvider =
     final auth = FirebaseAuth.instance;
     final firestore = FirebaseFirestore.instance;
     
-    // Create Firebase Auth user first
     UserCredential userCredential;
     try {
       userCredential = await auth.createUserWithEmailAndPassword(
@@ -44,7 +43,23 @@ final createCompanyProvider =
       );
     } on FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
-        throw Exception('Există deja un cont cu acest email.');
+        // Check if this is an orphaned auth account (no Firestore user doc)
+        final orphaned = await _tryCleanOrphanedAuthAccount(
+          auth, firestore, params.email.trim(), params.password,
+        );
+        if (orphaned) {
+          // Retry after cleanup
+          try {
+            userCredential = await auth.createUserWithEmailAndPassword(
+              email: params.email.trim(),
+              password: params.password,
+            );
+          } on FirebaseAuthException catch (retryError) {
+            throw Exception('Eroare la recrearea contului: ${retryError.message ?? retryError.code}');
+          }
+        } else {
+          throw Exception('Există deja un cont activ cu acest email.');
+        }
       } else if (e.code == 'weak-password') {
         throw Exception('Parola este prea slabă.');
       } else if (e.code == 'invalid-email') {
@@ -62,13 +77,20 @@ final createCompanyProvider =
     
     // Create company in Firestore
     final company = CompanyModel(
-      id: '', // Will be set by repository
+      id: '',
       name: params.name,
       clientType: params.clientType,
       email: params.email,
       password: params.password,
+      phone: params.phone,
       city: params.city,
       isActive: params.isActive,
+      cui: params.cui,
+      nrRegCom: params.nrRegCom,
+      adresaSediu: params.adresaSediu,
+      judet: params.judet,
+      banca: params.banca,
+      iban: params.iban,
     );
     
     String companyId;
@@ -119,8 +141,15 @@ final updateCompanyProvider =
       clientType: params.clientType,
       email: params.email,
       password: params.password,
+      phone: params.phone,
       city: params.city,
       isActive: params.isActive,
+      cui: params.cui,
+      nrRegCom: params.nrRegCom,
+      adresaSediu: params.adresaSediu,
+      judet: params.judet,
+      banca: params.banca,
+      iban: params.iban,
     );
     return repository.updateCompany(company);
   },
@@ -175,34 +204,115 @@ final deleteCompanyProvider = Provider.family<Future<void>, String>(
   },
 );
 
-/// Create company parameters
+/// Checks if an "email-already-in-use" error is caused by an orphaned
+/// Firebase Auth account (auth exists but no Firestore user document).
+/// If orphaned and we can sign in with the provided password, deletes
+/// the old auth account and returns true so the caller can retry.
+Future<bool> _tryCleanOrphanedAuthAccount(
+  FirebaseAuth auth,
+  FirebaseFirestore firestore,
+  String email,
+  String password,
+) async {
+  try {
+    // Check if any Firestore user doc exists with this email
+    final usersQuery = await firestore
+        .collection(FirestorePaths.users)
+        .where('email', isEqualTo: email)
+        .limit(1)
+        .get();
+
+    if (usersQuery.docs.isNotEmpty) {
+      // There IS a Firestore user doc → this is a real duplicate, not orphaned
+      return false;
+    }
+
+    // No Firestore user doc → orphaned auth account
+    // Try signing in to reclaim and delete it
+    final currentUser = auth.currentUser;
+    try {
+      final credential = await auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      if (credential.user != null) {
+        await credential.user!.delete();
+      }
+    } catch (_) {
+      // Password doesn't match the orphaned account — send reset email
+      try {
+        await auth.sendPasswordResetEmail(email: email);
+      } catch (_) {}
+      throw Exception(
+        'Un cont vechi cu acest email a fost găsit. '
+        'Am trimis un email de resetare a parolei la $email. '
+        'Resetează parola și apoi conectează-te cu „Am uitat parola".',
+      );
+    }
+
+    // Restore admin session if one was active
+    if (currentUser != null) {
+      try {
+        await currentUser.reload();
+      } catch (_) {}
+    }
+
+    return true;
+  } catch (e) {
+    if (e is Exception && e.toString().contains('Un cont vechi')) {
+      rethrow;
+    }
+    return false;
+  }
+}
+
 class CreateCompanyParams {
   final String name;
   final ClientType clientType;
   final String email;
   final String password;
+  final String phone;
   final String city;
   final bool isActive;
+  final String? cui;
+  final String? nrRegCom;
+  final String? adresaSediu;
+  final String? judet;
+  final String? banca;
+  final String? iban;
 
   const CreateCompanyParams({
     required this.name,
     required this.clientType,
     required this.email,
     required this.password,
+    this.phone = '',
     required this.city,
     this.isActive = true,
+    this.cui,
+    this.nrRegCom,
+    this.adresaSediu,
+    this.judet,
+    this.banca,
+    this.iban,
   });
 }
 
-/// Update company parameters
 class UpdateCompanyParams {
   final CompanyModel company;
   final String name;
   final ClientType clientType;
   final String email;
   final String password;
+  final String phone;
   final String city;
   final bool isActive;
+  final String? cui;
+  final String? nrRegCom;
+  final String? adresaSediu;
+  final String? judet;
+  final String? banca;
+  final String? iban;
 
   const UpdateCompanyParams({
     required this.company,
@@ -210,8 +320,15 @@ class UpdateCompanyParams {
     required this.clientType,
     required this.email,
     required this.password,
+    required this.phone,
     required this.city,
     required this.isActive,
+    this.cui,
+    this.nrRegCom,
+    this.adresaSediu,
+    this.judet,
+    this.banca,
+    this.iban,
   });
 }
 

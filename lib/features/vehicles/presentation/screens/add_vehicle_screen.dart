@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/validators.dart';
 import '../providers/vehicle_provider.dart';
 import 'package:go_router/go_router.dart';
 
-/// Add vehicle screen
 class AddVehicleScreen extends ConsumerStatefulWidget {
   const AddVehicleScreen({super.key});
 
@@ -26,59 +26,36 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
   }
 
   Future<void> _handleSave() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
 
     try {
-      final createProvider = createVehicleProvider(
+      await ref.read(createVehicleProvider(
         CreateVehicleParams(
           plateNumber: _plateController.text.trim().toUpperCase(),
-          description: _descriptionController.text.trim().isEmpty
-              ? null
-              : _descriptionController.text.trim(),
+          description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
         ),
-      );
-      await ref.read(createProvider);
+      ));
 
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Mașina a fost adăugată cu succes'),
-          backgroundColor: Colors.green,
-        ),
+        SnackBar(content: const Text('Mașina a fost adăugată cu succes'), backgroundColor: AppColors.success),
       );
-
       context.pop();
     } catch (e) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: AppColors.error),
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Adaugă Mașină'),
-      ),
+      appBar: AppBar(title: const Text('Adaugă mașină')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -91,7 +68,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Număr înmatriculare *',
                   hintText: 'Introdu numărul de înmatriculare',
-                  prefixIcon: Icon(Icons.confirmation_number),
+                  prefixIcon: Icon(Icons.confirmation_number_outlined),
                 ),
                 textCapitalization: TextCapitalization.characters,
                 validator: Validators.plateNumber,
@@ -104,7 +81,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Descriere (Opțional)',
                   hintText: 'Descrierea vehiculului, modelul, culoarea, etc.',
-                  prefixIcon: Icon(Icons.description),
+                  prefixIcon: Icon(Icons.description_outlined),
                 ),
                 maxLines: 3,
                 enabled: !_isLoading,
@@ -112,19 +89,13 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _isLoading ? null : _handleSave,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
+                style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
                 child: _isLoading
                     ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
+                        height: 22, width: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)),
                       )
-                    : const Text('Salvează Mașina'),
+                    : const Text('Salvează mașina'),
               ),
             ],
           ),
@@ -133,4 +104,3 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
     );
   }
 }
-

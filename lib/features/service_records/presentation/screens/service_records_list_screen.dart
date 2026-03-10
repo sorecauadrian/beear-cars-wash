@@ -151,20 +151,20 @@ class _ServiceRecordsListScreenState
                         const Icon(
                           Icons.description_outlined,
                           size: 64,
-                          color: Colors.grey,
+                          color: AppColors.onSurfaceVariant,
                         ),
                         const SizedBox(height: 16),
                         const Text(
                           'Nu există servicii finalizate',
                           style: TextStyle(
                             fontSize: 18,
-                            color: Colors.grey,
+                            color: AppColors.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(height: 8),
                         const Text(
                           'Serviciile finalizate vor apărea aici',
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(color: AppColors.onSurfaceVariant),
                         ),
                       ],
                     ),
@@ -186,7 +186,7 @@ class _ServiceRecordsListScreenState
                             const Icon(
                               Icons.filter_alt_outlined,
                               size: 64,
-                              color: Colors.grey,
+                              color: AppColors.onSurfaceVariant,
                             ),
                             const SizedBox(height: 16),
                             const Text(
@@ -194,7 +194,7 @@ class _ServiceRecordsListScreenState
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 18,
-                                color: Colors.grey,
+                                color: AppColors.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -239,7 +239,7 @@ class _ServiceRecordsListScreenState
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                        const Icon(Icons.error_outline, size: 64, color: AppColors.error),
                         const SizedBox(height: 16),
                         Text('Eroare la încărcarea companiilor: $error'),
                         const SizedBox(height: 16),
@@ -260,7 +260,7 @@ class _ServiceRecordsListScreenState
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(Icons.error_outline,
-                        size: 64, color: Colors.red),
+                        size: 64, color: AppColors.error),
                     const SizedBox(height: 16),
                     Text('Eroare: $error'),
                     const SizedBox(height: 16),
@@ -421,7 +421,7 @@ class _ServiceRecordsListScreenState
                   Icon(
                     Icons.arrow_forward_ios,
                     size: 16,
-                    color: Colors.grey,
+                    color: AppColors.onSurfaceVariant,
                   ),
                 ],
               ),
@@ -429,7 +429,7 @@ class _ServiceRecordsListScreenState
               Text(
                 _formatMonth(record['month'] as String),
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: Colors.grey[600],
+                  color: AppColors.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 16),
@@ -459,7 +459,7 @@ class _ServiceRecordsListScreenState
                     child: _buildServiceBadge(
                       'Tapițerie',
                       record['tapiterieWashes'] as int,
-                      Colors.orange,
+                      AppColors.warning,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -502,7 +502,7 @@ class _ServiceRecordsListScreenState
               Text(
                 '${bookings.length} servicii finalizate • Apasă pentru detalii',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
+                  color: AppColors.onSurfaceVariant,
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -571,7 +571,7 @@ class _ServiceRecordsListScreenState
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: AppColors.outline,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -593,7 +593,7 @@ class _ServiceRecordsListScreenState
                           Text(
                             _formatMonth(record['month'] as String),
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: Colors.grey[600],
+                                  color: AppColors.onSurfaceVariant,
                                 ),
                           ),
                         ],
@@ -676,7 +676,7 @@ class _ServiceRecordsListScreenState
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: Colors.grey[600]),
+        Icon(icon, size: 18, color: AppColors.onSurfaceVariant),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
@@ -686,7 +686,7 @@ class _ServiceRecordsListScreenState
                 label,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: AppColors.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -725,7 +725,7 @@ class _ServiceRecordsListScreenState
       case WashType.exterior:
         return AppColors.primary;
       case WashType.tapiterie:
-        return Colors.orange;
+        return AppColors.warning;
       case WashType.all:
         return AppColors.darkNavy;
     }
@@ -755,7 +755,7 @@ class _ServiceRecordsListScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Nu există servicii de exportat'),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warning,
         ),
       );
       return;
@@ -805,7 +805,7 @@ class _ServiceRecordsListScreenState
                         Text(
                           company?.name ?? 'Companie necunoscută',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
+                            color: AppColors.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -814,7 +814,7 @@ class _ServiceRecordsListScreenState
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),
-                    color: Colors.grey[600],
+                    color: AppColors.onSurfaceVariant,
                   ),
                 ],
               ),
@@ -822,7 +822,7 @@ class _ServiceRecordsListScreenState
               Text(
                 _formatMonth(record['month'] as String),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
+                  color: AppColors.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 24),
@@ -841,8 +841,8 @@ class _ServiceRecordsListScreenState
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    border: Border.all(color: Colors.green.shade200, width: 2),
+                    color: AppColors.successLight,
+                    border: Border.all(color: AppColors.success.withValues(alpha: 0.3), width: 2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -850,12 +850,12 @@ class _ServiceRecordsListScreenState
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.green.shade100,
+                          color: AppColors.success.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(
                           Icons.table_chart,
-                          color: Colors.green,
+                          color: AppColors.success,
                           size: 28,
                         ),
                       ),
@@ -868,14 +868,14 @@ class _ServiceRecordsListScreenState
                               'Excel (.xlsx)',
                               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.green.shade900,
+                                color: AppColors.success,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               'Tabel editabil',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.green.shade700,
+                                color: AppColors.success,
                               ),
                             ),
                           ],
@@ -883,7 +883,7 @@ class _ServiceRecordsListScreenState
                       ),
                       Icon(
                         Icons.arrow_forward_ios,
-                        color: Colors.green.shade700,
+                        color: AppColors.success,
                         size: 20,
                       ),
                     ],
@@ -898,8 +898,8 @@ class _ServiceRecordsListScreenState
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    border: Border.all(color: Colors.red.shade200, width: 2),
+                    color: AppColors.errorLight,
+                    border: Border.all(color: AppColors.error.withValues(alpha: 0.3), width: 2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -907,12 +907,12 @@ class _ServiceRecordsListScreenState
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.red.shade100,
+                          color: AppColors.error.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(
                           Icons.picture_as_pdf,
-                          color: Colors.red,
+                          color: AppColors.error,
                           size: 28,
                         ),
                       ),
@@ -925,14 +925,14 @@ class _ServiceRecordsListScreenState
                               'PDF (.pdf)',
                               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.red.shade900,
+                                color: AppColors.error,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               'Document pentru printare',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.red.shade700,
+                                color: AppColors.error,
                               ),
                             ),
                           ],
@@ -940,7 +940,7 @@ class _ServiceRecordsListScreenState
                       ),
                       Icon(
                         Icons.arrow_forward_ios,
-                        color: Colors.red.shade700,
+                        color: AppColors.error,
                         size: 20,
                       ),
                     ],
@@ -955,7 +955,7 @@ class _ServiceRecordsListScreenState
                   onPressed: () => Navigator.pop(context),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: BorderSide(color: Colors.grey.shade300),
+                    side: BorderSide(color: AppColors.outline),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -1029,7 +1029,7 @@ class _ServiceRecordsListScreenState
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Export realizat cu succes!'),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.success,
             ),
           );
         }
@@ -1038,7 +1038,7 @@ class _ServiceRecordsListScreenState
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Eroare la export: ${e.toString()}'),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
             ),
           );
         }
@@ -1153,7 +1153,7 @@ class _ServiceRecordsListScreenState
                         decoration: BoxDecoration(
                           color: isSelected
                               ? AppColors.primary
-                              : Colors.grey[200],
+                              : AppColors.outline,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Center(

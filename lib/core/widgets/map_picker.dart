@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 
-/// Map picker widget for selecting a location
 class MapPicker extends StatefulWidget {
   final double? initialLat;
   final double? initialLng;
@@ -22,7 +23,7 @@ class MapPicker extends StatefulWidget {
 
 class _MapPickerState extends State<MapPicker> {
   GoogleMapController? _mapController;
-  LatLng _selectedLocation = const LatLng(47.1333, 24.4833); // Bistrita center
+  LatLng _selectedLocation = const LatLng(47.1333, 24.4833);
   String _addressText = 'Se încarcă adresa...';
   bool _isLoadingAddress = false;
   Marker? _marker;
@@ -39,7 +40,6 @@ class _MapPickerState extends State<MapPicker> {
       }
     } else {
       _requestLocationPermission();
-      // Get address for initial location
       _getAddressFromCoordinates(_selectedLocation);
     }
     _updateMarker();
@@ -48,7 +48,7 @@ class _MapPickerState extends State<MapPicker> {
   Future<void> _requestLocationPermission() async {
     final status = await Permission.location.request();
     if (status.isGranted && mounted) {
-      // Could get current location here if needed
+      // Could get current location here
     }
   }
 
@@ -70,7 +70,7 @@ class _MapPickerState extends State<MapPicker> {
 
   Future<void> _getAddressFromCoordinates(LatLng position) async {
     if (!mounted) return;
-    
+
     setState(() {
       _isLoadingAddress = true;
       _addressText = 'Se încarcă adresa...';
@@ -87,8 +87,7 @@ class _MapPickerState extends State<MapPicker> {
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
         final addressParts = <String>[];
-        
-        // Build address in Romanian format: Strada X, nr. Y, Oraș, Județ
+
         if (place.street != null && place.street!.isNotEmpty) {
           addressParts.add(place.street!);
         }
@@ -106,137 +105,248 @@ class _MapPickerState extends State<MapPicker> {
         }
 
         if (!mounted) return;
-        
+
         setState(() {
           if (addressParts.isNotEmpty) {
             _addressText = addressParts.join(', ');
+          } else if (place.name != null && place.name!.isNotEmpty) {
+            _addressText = place.name!;
+          } else if (place.thoroughfare != null && place.thoroughfare!.isNotEmpty) {
+            _addressText = place.thoroughfare!;
           } else {
-            // Fallback: try to get a readable address from name or thoroughfare
-            if (place.name != null && place.name!.isNotEmpty) {
-              _addressText = place.name!;
-            } else if (place.thoroughfare != null && place.thoroughfare!.isNotEmpty) {
-              _addressText = place.thoroughfare!;
-            } else {
-              _addressText = 'Locație selectată (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)})';
-            }
+            _addressText = _coordsFallback(position);
           }
           _isLoadingAddress = false;
         });
       } else {
         if (!mounted) return;
         setState(() {
-          _addressText = 'Locație selectată (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)})';
+          _addressText = _coordsFallback(position);
           _isLoadingAddress = false;
         });
       }
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
-      // On error, still show a readable format instead of raw coordinates
       setState(() {
-        _addressText = 'Locație selectată (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)})';
+        _addressText = _coordsFallback(position);
         _isLoadingAddress = false;
       });
     }
   }
 
+  String _coordsFallback(LatLng pos) =>
+      'Locație selectată (${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)})';
+
   void _onMapTap(LatLng position) {
     if (!mounted) return;
-    setState(() {
-      _selectedLocation = position;
-    });
+    setState(() => _selectedLocation = position);
     _updateMarker();
     _getAddressFromCoordinates(position);
   }
 
+  Map<String, dynamic> _buildResult() => {
+    'lat': _selectedLocation.latitude,
+    'lng': _selectedLocation.longitude,
+    'address': _isLoadingAddress ? _coordsFallback(_selectedLocation) : _addressText,
+  };
+
+  void _confirm() => Navigator.pop(context, _buildResult());
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Selectează locația'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context, {
-                'lat': _selectedLocation.latitude,
-                'lng': _selectedLocation.longitude,
-                'address': _addressText,
-              });
-            },
-            child: const Text(
-              'Confirmă',
-              style: TextStyle(color: Colors.white),
-            ),
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirm();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Selectează locația'),
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: _confirm,
           ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: _selectedLocation,
-              zoom: 14,
+        ),
+        body: Stack(
+          children: [
+            // Map fills everything
+            Positioned.fill(
+              child: GoogleMap(
+                initialCameraPosition: CameraPosition(
+                  target: _selectedLocation,
+                  zoom: 14,
+                ),
+                onMapCreated: (GoogleMapController controller) {
+                  if (mounted) _mapController = controller;
+                },
+                onTap: _onMapTap,
+                markers: _marker != null ? {_marker!} : {},
+                myLocationButtonEnabled: false,
+                zoomControlsEnabled: false,
+                mapType: MapType.normal,
+                compassEnabled: true,
+                padding: EdgeInsets.only(bottom: 180 + bottomPadding),
+              ),
             ),
-            onMapCreated: (GoogleMapController controller) {
-              if (mounted) {
-                _mapController = controller;
-              }
-            },
-            onTap: _onMapTap,
-            markers: _marker != null ? {_marker!} : {},
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: true,
-            mapType: MapType.normal,
-            compassEnabled: true,
-          ),
-          Positioned(
-            bottom: 16,
-            left: 16,
-            right: 16,
-            child: Card(
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+
+            // Zoom controls top-right
+            Positioned(
+              top: AppSpacing.md,
+              right: AppSpacing.md,
+              child: Column(
+                children: [
+                  _mapControlButton(Icons.add, () {
+                    _mapController?.animateCamera(CameraUpdate.zoomIn());
+                  }),
+                  const SizedBox(height: 8),
+                  _mapControlButton(Icons.remove, () {
+                    _mapController?.animateCamera(CameraUpdate.zoomOut());
+                  }),
+                ],
+              ),
+            ),
+
+            // Bottom panel: address + confirm button
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 16,
+                      offset: const Offset(0, -4),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.location_on, color: Colors.red),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Adresă selectată:',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                        // Drag handle
+                        Center(
+                          child: Container(
+                            width: 36,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: AppColors.outline,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Address row
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.accent.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(Icons.location_on_rounded, color: AppColors.accent, size: 22),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Adresă selectată',
+                                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                      color: AppColors.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  if (_isLoadingAddress)
+                                    Row(
+                                      children: [
+                                        SizedBox(
+                                          width: 14,
+                                          height: 14,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: AppColors.accent,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Se încarcă adresa...',
+                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                            color: AppColors.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  else
+                                    Text(
+                                      _addressText,
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Confirm button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _isLoadingAddress ? null : _confirm,
+                            icon: const Icon(Icons.check_rounded, size: 20),
+                            label: const Text('Confirmă locația'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    if (_isLoadingAddress)
-                      const Row(
-                        children: [
-                          SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                          SizedBox(width: 8),
-                          Text('Se încarcă adresa...'),
-                        ],
-                      )
-                    else
-                      Text(
-                        _addressText,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _mapControlButton(IconData icon, VoidCallback onPressed) {
+    return Material(
+      color: AppColors.surface,
+      elevation: 2,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(icon, size: 20, color: AppColors.onSurface),
+        ),
       ),
     );
   }
@@ -247,4 +357,3 @@ class _MapPickerState extends State<MapPicker> {
     super.dispose();
   }
 }
-

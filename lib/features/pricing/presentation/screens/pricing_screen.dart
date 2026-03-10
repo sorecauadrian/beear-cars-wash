@@ -99,7 +99,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Prețuri actualizate cu succes!'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
           ),
         );
         context.pop();
@@ -109,7 +109,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Eroare: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -218,7 +218,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                       description: 'Spălare interior',
                       controller: _interiorController,
                       icon: Icons.airline_seat_recline_normal,
-                      color: Colors.blue,
+                      color: AppColors.info,
                       currentPrice: pricing?.interiorPrice.toInt().toString(),
                     ),
                     _buildPriceCard(
@@ -236,7 +236,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                       description: 'Spălare tapițerie',
                       controller: _tapiterieController,
                       icon: Icons.chair,
-                      color: Colors.orange,
+                      color: AppColors.warning,
                       currentPrice: pricing?.tapiteriePrice.toStringAsFixed(2),
                     ),
                     _buildPriceCard(
@@ -286,7 +286,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const Icon(Icons.error_outline, size: 64, color: AppColors.error),
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -375,7 +375,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
               Text(
                 description,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
+                  color: AppColors.onSurfaceVariant,
                   fontSize: 10,
                 ),
                 maxLines: 1,
