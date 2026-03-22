@@ -7,7 +7,6 @@ class ServiceRecordModel {
   final String month; // Format: "YYYY-MM" (e.g., "2024-01")
   final int interiorWashes;
   final int exteriorWashes;
-  final int tapiterieWashes;
   final int completeWashes;
   final String? notes;
   final bool isFinalized;
@@ -21,7 +20,6 @@ class ServiceRecordModel {
     required this.month,
     required this.interiorWashes,
     required this.exteriorWashes,
-    required this.tapiterieWashes,
     required this.completeWashes,
     this.notes,
     this.isFinalized = false,
@@ -30,11 +28,9 @@ class ServiceRecordModel {
     required this.updatedAt,
   });
 
-  /// Get total services
   int get totalServices =>
-      interiorWashes + exteriorWashes + tapiterieWashes + completeWashes;
+      interiorWashes + exteriorWashes + completeWashes;
 
-  /// Create ServiceRecordModel from Firestore document
   factory ServiceRecordModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return ServiceRecordModel(
@@ -43,7 +39,6 @@ class ServiceRecordModel {
       month: data['month'] as String? ?? '',
       interiorWashes: (data['interiorWashes'] as num?)?.toInt() ?? 0,
       exteriorWashes: (data['exteriorWashes'] as num?)?.toInt() ?? 0,
-      tapiterieWashes: (data['tapiterieWashes'] as num?)?.toInt() ?? 0,
       completeWashes: (data['completeWashes'] as num?)?.toInt() ?? 0,
       notes: data['notes'] as String?,
       isFinalized: data['isFinalized'] as bool? ?? false,
@@ -53,14 +48,12 @@ class ServiceRecordModel {
     );
   }
 
-  /// Convert ServiceRecordModel to Firestore map
   Map<String, dynamic> toFirestore() {
     return {
       'companyId': companyId,
       'month': month,
       'interiorWashes': interiorWashes,
       'exteriorWashes': exteriorWashes,
-      'tapiterieWashes': tapiterieWashes,
       'completeWashes': completeWashes,
       if (notes != null) 'notes': notes,
       'isFinalized': isFinalized,
@@ -70,7 +63,6 @@ class ServiceRecordModel {
     };
   }
 
-  /// Create ServiceRecordModel from map
   factory ServiceRecordModel.fromMap(Map<String, dynamic> map) {
     return ServiceRecordModel(
       id: map['id'] as String,
@@ -78,7 +70,6 @@ class ServiceRecordModel {
       month: map['month'] as String,
       interiorWashes: (map['interiorWashes'] as num?)?.toInt() ?? 0,
       exteriorWashes: (map['exteriorWashes'] as num?)?.toInt() ?? 0,
-      tapiterieWashes: (map['tapiterieWashes'] as num?)?.toInt() ?? 0,
       completeWashes: (map['completeWashes'] as num?)?.toInt() ?? 0,
       notes: map['notes'] as String?,
       isFinalized: map['isFinalized'] as bool? ?? false,
@@ -88,7 +79,6 @@ class ServiceRecordModel {
     );
   }
 
-  /// Convert ServiceRecordModel to map
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -96,7 +86,6 @@ class ServiceRecordModel {
       'month': month,
       'interiorWashes': interiorWashes,
       'exteriorWashes': exteriorWashes,
-      'tapiterieWashes': tapiterieWashes,
       'completeWashes': completeWashes,
       'notes': notes,
       'isFinalized': isFinalized,
@@ -112,7 +101,6 @@ class ServiceRecordModel {
     String? month,
     int? interiorWashes,
     int? exteriorWashes,
-    int? tapiterieWashes,
     int? completeWashes,
     String? notes,
     bool? isFinalized,
@@ -126,7 +114,6 @@ class ServiceRecordModel {
       month: month ?? this.month,
       interiorWashes: interiorWashes ?? this.interiorWashes,
       exteriorWashes: exteriorWashes ?? this.exteriorWashes,
-      tapiterieWashes: tapiterieWashes ?? this.tapiterieWashes,
       completeWashes: completeWashes ?? this.completeWashes,
       notes: notes ?? this.notes,
       isFinalized: isFinalized ?? this.isFinalized,
@@ -136,4 +123,3 @@ class ServiceRecordModel {
     );
   }
 }
-

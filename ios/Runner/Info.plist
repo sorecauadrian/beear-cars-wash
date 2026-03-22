@@ -45,12 +45,8 @@
 		<true/>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
-		<key>NSCameraUsageDescription</key>
-		<string>This app needs camera access to scan license plates</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
-		<string>This app needs location access to select addresses on the map</string>
-		<key>NSLocationAlwaysUsageDescription</key>
-		<string>This app needs location access to select addresses on the map</string>
+		<string>Această aplicație are nevoie de acces la locație pentru a selecta adrese pe hartă</string>
 		<key>UIStatusBarHidden</key>
 		<false/>
 	</dict>

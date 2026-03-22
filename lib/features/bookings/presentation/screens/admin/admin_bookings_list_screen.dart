@@ -8,19 +8,16 @@ import '../../../../../core/utils/map_utils.dart';
 import '../../../../../core/utils/date_time_utils.dart';
 import '../../../../../core/services/notification_sender_service.dart';
 import '../../../../../features/auth/presentation/providers/auth_provider.dart';
-import '../../../../../features/companies/data/repositories/company_repository.dart';
 import '../../../../../features/companies/data/models/company_model.dart';
 import '../../../../../features/companies/presentation/providers/company_provider.dart';
 import '../../../../vehicles/data/repositories/vehicle_repository.dart';
 import '../../../../vehicles/data/models/vehicle_model.dart';
 import '../../../data/models/booking_model.dart';
 import '../../providers/booking_provider.dart';
-import '../../../../../shared/widgets/booking_card.dart';
 import '../../../../../shared/widgets/status_badge.dart';
 import '../../../../../shared/widgets/wash_type_indicator.dart';
 import '../../../../../shared/widgets/empty_state.dart';
 import '../../../../../shared/widgets/skeleton_loader.dart';
-import '../../../../../shared/widgets/section_header.dart';
 import '../../../../../shared/utils/status_utils.dart';
 import '../../../../../shared/utils/wash_type_utils.dart';
 
@@ -76,14 +73,15 @@ class _AdminBookingsListScreenState extends ConsumerState<AdminBookingsListScree
   }
 
   Widget _buildStatusFilters(BuildContext context) {
+    final theme = Theme.of(context);
     final statuses = [null, BookingStatus.accepted, BookingStatus.inProgress, BookingStatus.done];
     final labels = ['Toate', 'Acceptate', 'În progres', 'Finalizate'];
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.outline.withValues(alpha: 0.5))),
+        color: theme.colorScheme.surface,
+        border: Border(bottom: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.5))),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -102,7 +100,7 @@ class _AdminBookingsListScreenState extends ConsumerState<AdminBookingsListScree
                 selectedColor: AppColors.accent.withValues(alpha: 0.15),
                 checkmarkColor: AppColors.accent,
                 labelStyle: TextStyle(
-                  color: isSelected ? AppColors.accent : AppColors.onSurfaceVariant,
+                  color: isSelected ? AppColors.accent : theme.colorScheme.onSurfaceVariant,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
@@ -143,6 +141,13 @@ class _AdminBookingsListScreenState extends ConsumerState<AdminBookingsListScree
           );
         }
 
+        final groupedByDate = <String, List<MapEntry<BookingModel, CompanyModel?>>>{};
+        for (final booking in filtered) {
+          final company = companiesAsync.value?.where((c) => c.id == booking.companyId).firstOrNull;
+          groupedByDate.putIfAbsent(booking.date, () => []).add(MapEntry(booking, company));
+        }
+        final sortedDates = groupedByDate.keys.toList()..sort();
+
         return RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(allBookingsProvider);
@@ -150,16 +155,45 @@ class _AdminBookingsListScreenState extends ConsumerState<AdminBookingsListScree
           },
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-            itemCount: filtered.length,
-            itemBuilder: (context, index) {
-              final booking = filtered[index];
-              final company = companiesAsync.value?.where((c) => c.id == booking.companyId).firstOrNull;
+            itemCount: sortedDates.length,
+            itemBuilder: (context, dateIndex) {
+              final date = sortedDates[dateIndex];
+              final entries = groupedByDate[date]!;
+              final parsedDate = DateTimeUtils.parseDate(date);
+              final now = DateTime.now();
+              final today = DateTime(now.year, now.month, now.day);
+              final tomorrow = today.add(const Duration(days: 1));
+              final dateOnly = parsedDate != null ? DateTime(parsedDate.year, parsedDate.month, parsedDate.day) : null;
 
-              return _AdminBookingCard(
-                booking: booking,
-                companyName: company?.name ?? 'Companie necunoscută',
-                companyPhone: company?.phone,
-                onStatusChange: (newStatus) => _updateStatus(booking, newStatus),
+              String dateLabel;
+              if (dateOnly == today) {
+                dateLabel = 'Astăzi — ${DateTimeUtils.formatDateDisplay(parsedDate!)}';
+              } else if (dateOnly == tomorrow) {
+                dateLabel = 'Mâine — ${DateTimeUtils.formatDateDisplay(parsedDate!)}';
+              } else {
+                dateLabel = parsedDate != null ? DateTimeUtils.formatDateDisplay(parsedDate) : date;
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xs),
+                    child: Text(
+                      dateLabel,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                  ...entries.map((entry) => _AdminBookingCard(
+                    booking: entry.key,
+                    companyName: entry.value?.name ?? 'Companie necunoscută',
+                    companyPhone: entry.value?.phone,
+                    onStatusChange: (newStatus) => _updateStatus(entry.key, newStatus),
+                  )),
+                ],
               );
             },
           ),
@@ -234,9 +268,9 @@ class _AdminBookingCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: theme.colorScheme.surface,
         borderRadius: AppSpacing.borderRadiusLg,
-        border: Border.all(color: AppColors.outline),
+        border: Border.all(color: theme.colorScheme.outline),
         boxShadow: AppSpacing.shadowSm,
       ),
       child: InkWell(
@@ -247,12 +281,12 @@ class _AdminBookingCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header row
+              // Header: wash icon + name + wash type + status
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   WashTypeIndicator(washType: booking.washType),
-                  const SizedBox(width: AppSpacing.md),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,7 +295,7 @@ class _AdminBookingCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           WashTypeUtils.fullLabel(booking.washType),
-                          style: theme.textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceVariant),
+                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                         ),
                       ],
                     ),
@@ -269,39 +303,32 @@ class _AdminBookingCard extends StatelessWidget {
                   StatusBadge(status: booking.status),
                 ],
               ),
-              const SizedBox(height: AppSpacing.md),
-              // Info row
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
-                  borderRadius: AppSpacing.borderRadiusSm,
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.access_time_rounded, size: 14, color: AppColors.onSurfaceVariant),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${booking.slotStart} – ${booking.slotEnd}',
-                      style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+              const SizedBox(height: AppSpacing.sm),
+              // Time + address row
+              Row(
+                children: [
+                  Icon(Icons.access_time_rounded, size: 14, color: theme.colorScheme.onSurfaceVariant),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${booking.slotStart} – ${booking.slotEnd}',
+                    style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Icon(Icons.location_on_outlined, size: 14, color: theme.colorScheme.onSurfaceVariant),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      booking.addressText,
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(width: AppSpacing.md),
-                    Icon(Icons.location_on_outlined, size: 14, color: AppColors.onSurfaceVariant),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        booking.addressText,
-                        style: theme.textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceVariant),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              // Phone number row
+              // Phone - subtle inline
               if (companyPhone != null && companyPhone!.trim().isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: 4),
                 _PhoneRow(phone: companyPhone!),
               ],
               // Quick actions
@@ -313,7 +340,7 @@ class _AdminBookingCard extends StatelessWidget {
                       icon: Icon(
                         Icons.directions_outlined,
                         size: 20,
-                        color: booking.lat != null ? AppColors.onSurfaceVariant : AppColors.warning,
+                        color: booking.lat != null ? theme.colorScheme.onSurfaceVariant : AppColors.warning,
                       ),
                       onPressed: () {
                         if (booking.lat == null || booking.lng == null) {
@@ -528,12 +555,13 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AppColors.onSurfaceVariant),
+          Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
@@ -541,10 +569,10 @@ class _DetailRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceVariant),
+                  style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 2),
-                Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                Text(value, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
               ],
             ),
           ),
@@ -561,6 +589,7 @@ class _PhoneRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: () {
         Clipboard.setData(ClipboardData(text: phone));
@@ -574,36 +603,29 @@ class _PhoneRow extends StatelessWidget {
       },
       onLongPress: () => MapUtils.launchPhone(phone),
       borderRadius: AppSpacing.borderRadiusSm,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 6),
-        decoration: BoxDecoration(
-          color: AppColors.infoLight,
-          borderRadius: AppSpacing.borderRadiusSm,
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.phone_outlined, size: 16, color: AppColors.info),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                phone,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.info,
-                  letterSpacing: 0.5,
-                ),
-              ),
+      child: Row(
+        children: [
+          Icon(Icons.phone_outlined, size: 14, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(width: 4),
+          Text(
+            phone,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: theme.colorScheme.onSurfaceVariant,
+              letterSpacing: 0.3,
             ),
-            Icon(Icons.copy_rounded, size: 14, color: AppColors.info.withValues(alpha: 0.6)),
-            const SizedBox(width: 4),
-            Text(
-              'Copiază',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.info.withValues(alpha: 0.6),
-              ),
+          ),
+          const SizedBox(width: 8),
+          Icon(Icons.copy_rounded, size: 12, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+          const SizedBox(width: 2),
+          Text(
+            'Copiază',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+              fontSize: 10,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -616,12 +638,13 @@ class _PhoneDetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.phone_outlined, size: 18, color: AppColors.onSurfaceVariant),
+          Icon(Icons.phone_outlined, size: 18, color: theme.colorScheme.onSurfaceVariant),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
@@ -629,14 +652,14 @@ class _PhoneDetailRow extends StatelessWidget {
               children: [
                 Text(
                   'Telefon',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceVariant),
+                  style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 2),
                 Row(
                   children: [
                     SelectableText(
                       phone,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.5,
                       ),

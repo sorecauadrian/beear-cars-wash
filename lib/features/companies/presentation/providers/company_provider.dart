@@ -81,7 +81,6 @@ final createCompanyProvider =
       name: params.name,
       clientType: params.clientType,
       email: params.email,
-      password: params.password,
       phone: params.phone,
       city: params.city,
       isActive: params.isActive,
@@ -140,7 +139,6 @@ final updateCompanyProvider =
       name: params.name,
       clientType: params.clientType,
       email: params.email,
-      password: params.password,
       phone: params.phone,
       city: params.city,
       isActive: params.isActive,
@@ -303,7 +301,6 @@ class UpdateCompanyParams {
   final String name;
   final ClientType clientType;
   final String email;
-  final String password;
   final String phone;
   final String city;
   final bool isActive;
@@ -319,7 +316,6 @@ class UpdateCompanyParams {
     required this.name,
     required this.clientType,
     required this.email,
-    required this.password,
     required this.phone,
     required this.city,
     required this.isActive,

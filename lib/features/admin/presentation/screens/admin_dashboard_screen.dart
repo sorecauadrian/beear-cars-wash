@@ -98,7 +98,7 @@ class AdminDashboardScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.xs),
           Text(
             DateTimeUtils.formatDateDisplay(DateTime.now()),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -187,7 +187,28 @@ class AdminDashboardScreen extends ConsumerWidget {
           ],
         ),
       ),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (error, __) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.error.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.15 : 0.08),
+            borderRadius: AppSpacing.borderRadiusMd,
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.error_outline_rounded, size: 20, color: Theme.of(context).colorScheme.error),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Nu s-au putut încărca statisticile',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -207,11 +228,11 @@ class AdminDashboardScreen extends ConsumerWidget {
               child: Center(
                 child: Column(
                   children: [
-                    Icon(Icons.event_available_rounded, size: 40, color: AppColors.onSurfaceVariant),
+                    Icon(Icons.event_available_rounded, size: 40, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
                       'Nicio rezervare pentru azi',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceVariant),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ),
                   ],
                 ),
@@ -233,7 +254,30 @@ class AdminDashboardScreen extends ConsumerWidget {
           childCount: 3,
         ),
       ),
-      error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+      error: (_, __) => SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.15 : 0.08),
+              borderRadius: AppSpacing.borderRadiusMd,
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.error_outline_rounded, size: 20, color: Theme.of(context).colorScheme.error),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    'Nu s-au putut încărca rezervările',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -252,7 +296,7 @@ class AdminDashboardScreen extends ConsumerWidget {
               child: Center(
                 child: Text(
                   'Nicio acțiune necesară',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceVariant),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ),
             ),
@@ -294,7 +338,30 @@ class AdminDashboardScreen extends ConsumerWidget {
           childCount: 2,
         ),
       ),
-      error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+      error: (_, __) => SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.15 : 0.08),
+              borderRadius: AppSpacing.borderRadiusMd,
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.error_outline_rounded, size: 20, color: Theme.of(context).colorScheme.error),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    'Nu s-au putut încărca acțiunile',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

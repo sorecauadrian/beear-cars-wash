@@ -34,7 +34,6 @@ class AppIcons {
   // Wash types (intuitive for car wash)
   static const IconData washExterior = Icons.water_drop_outlined;
   static const IconData washInterior = Icons.air_outlined;
-  static const IconData washTapiterie = Icons.chair_outlined;
   static const IconData washAll = Icons.cleaning_services_outlined;
 
   // Actions

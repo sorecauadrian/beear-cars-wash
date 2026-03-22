@@ -25,7 +25,6 @@ class _EditCompanyScreenState extends ConsumerState<EditCompanyScreen> {
   // Shared
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
   final _phoneController = TextEditingController();
   final _cityController = TextEditingController();
   ClientType _clientType = ClientType.persoanaFizica;
@@ -56,7 +55,6 @@ class _EditCompanyScreenState extends ConsumerState<EditCompanyScreen> {
           _company = company;
           _nameController.text = company.name;
           _emailController.text = company.email;
-          _passwordController.text = company.password;
           _phoneController.text = company.phone;
           _clientType = company.clientType;
           _cityController.text = company.city;
@@ -86,7 +84,6 @@ class _EditCompanyScreenState extends ConsumerState<EditCompanyScreen> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _passwordController.dispose();
     _phoneController.dispose();
     _cityController.dispose();
     _cuiController.dispose();
@@ -109,7 +106,6 @@ class _EditCompanyScreenState extends ConsumerState<EditCompanyScreen> {
         name: _nameController.text.trim(),
         clientType: _clientType,
         email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
         phone: _phoneController.text.trim(),
         city: _cityController.text.trim(),
         isActive: _company!.isActive,
@@ -156,18 +152,73 @@ class _EditCompanyScreenState extends ConsumerState<EditCompanyScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Client type
-              DropdownButtonFormField<ClientType>(
-                value: _clientType,
-                decoration: const InputDecoration(labelText: 'Tip client *', prefixIcon: Icon(Icons.category_outlined)),
-                items: ClientType.values.map((type) {
-                  return DropdownMenuItem(value: type, child: Text(type.displayName));
+              // Client type selector
+              Text(
+                'Tip client *',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: ClientType.values.map((type) {
+                  final isSelected = _clientType == type;
+                  final icon = type == ClientType.persoanaFizica
+                      ? Icons.person_outline
+                      : Icons.business_outlined;
+                  return Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        right: type == ClientType.values.first ? AppSpacing.sm : 0,
+                        left: type == ClientType.values.last ? AppSpacing.sm : 0,
+                      ),
+                      child: GestureDetector(
+                        onTap: _isLoading ? null : () => setState(() => _clientType = type),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? theme.colorScheme.primary.withValues(alpha: 0.08)
+                                : theme.colorScheme.surfaceContainerHighest,
+                            borderRadius: AppSpacing.borderRadiusMd,
+                            border: Border.all(
+                              color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline,
+                              width: isSelected ? 2 : 1,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                icon,
+                                size: 28,
+                                color: isSelected
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                type.displayName,
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                  color: isSelected
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              if (isSelected) ...[
+                                const SizedBox(height: 4),
+                                Icon(Icons.check_circle, size: 16, color: theme.colorScheme.primary),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
                 }).toList(),
-                onChanged: _isLoading
-                    ? null
-                    : (value) {
-                        if (value != null) setState(() => _clientType = value);
-                      },
               ),
               const SizedBox(height: 20),
 
@@ -235,7 +286,7 @@ class _EditCompanyScreenState extends ConsumerState<EditCompanyScreen> {
 
               // Shared fields
               const SizedBox(height: 24),
-              Divider(color: AppColors.outline),
+              Divider(color: theme.colorScheme.outline),
               const SizedBox(height: 16),
               _buildSectionLabel(theme, 'Cont și contact'),
               const SizedBox(height: 12),
@@ -244,14 +295,6 @@ class _EditCompanyScreenState extends ConsumerState<EditCompanyScreen> {
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(labelText: 'Email *', prefixIcon: Icon(Icons.email_outlined)),
                 validator: Validators.email,
-                enabled: !_isLoading,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Parolă *', prefixIcon: Icon(Icons.lock_outlined)),
-                validator: (v) => Validators.required(v, fieldName: 'Parola'),
                 enabled: !_isLoading,
               ),
               const SizedBox(height: 16),
@@ -286,13 +329,13 @@ class _EditCompanyScreenState extends ConsumerState<EditCompanyScreen> {
   Widget _buildSectionLabel(ThemeData theme, String text, {bool optional = false}) {
     return Row(
       children: [
-        Text(text, style: theme.textTheme.labelLarge?.copyWith(color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
+        Text(text, style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
         if (optional) ...[
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(color: AppColors.surfaceVariant, borderRadius: AppSpacing.borderRadiusFull),
-            child: Text('opțional', style: theme.textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceVariant)),
+            decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest, borderRadius: AppSpacing.borderRadiusFull),
+            child: Text('opțional', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ),
         ],
       ],

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/routing/route_names.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/constants/app_icons.dart';
 import 'package:go_router/go_router.dart';
 
@@ -13,9 +12,15 @@ class CustomerShellScreen extends StatelessWidget {
   int _currentIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
     if (location.startsWith(RouteNames.companyBookings) ||
-        location == RouteNames.companyHome) return 0;
-    if (location.startsWith('/company/vehicles')) return 1;
-    if (location == RouteNames.customerSettings) return 2;
+        location == RouteNames.companyHome) {
+      return 0;
+    }
+    if (location.startsWith('/company/vehicles')) {
+      return 1;
+    }
+    if (location == RouteNames.customerSettings) {
+      return 2;
+    }
     return 0;
   }
 
@@ -28,7 +33,7 @@ class CustomerShellScreen extends StatelessWidget {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           border: Border(
-            top: BorderSide(color: AppColors.outline.withValues(alpha: 0.5), width: 1),
+            top: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5), width: 1),
           ),
         ),
         child: NavigationBar(

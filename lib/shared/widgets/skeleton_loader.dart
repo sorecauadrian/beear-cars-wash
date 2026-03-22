@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 
 class SkeletonLoader extends StatefulWidget {
@@ -43,6 +42,10 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final baseColor = theme.colorScheme.surfaceContainerHighest;
+    final shimmerColor = theme.colorScheme.outline.withValues(alpha: 0.3);
+
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
@@ -54,11 +57,7 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
             gradient: LinearGradient(
               begin: Alignment(_animation.value - 1, 0),
               end: Alignment(_animation.value, 0),
-              colors: [
-                AppColors.surfaceVariant,
-                AppColors.outline.withValues(alpha: 0.3),
-                AppColors.surfaceVariant,
-              ],
+              colors: [baseColor, shimmerColor, baseColor],
             ),
           ),
         );
@@ -72,13 +71,15 @@ class SkeletonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: theme.colorScheme.surface,
         borderRadius: AppSpacing.borderRadiusLg,
-        border: Border.all(color: AppColors.outline),
+        border: Border.all(color: theme.colorScheme.outline),
       ),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,

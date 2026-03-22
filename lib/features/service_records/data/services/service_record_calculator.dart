@@ -1,7 +1,6 @@
 import '../../../bookings/data/models/booking_model.dart';
 import '../../../bookings/data/repositories/booking_repository.dart';
 import '../models/service_record_model.dart';
-import 'package:intl/intl.dart';
 
 /// Service to calculate service records from completed bookings
 class ServiceRecordCalculator {
@@ -9,19 +8,16 @@ class ServiceRecordCalculator {
 
   ServiceRecordCalculator(this._bookingRepository);
 
-  /// Calculate service record for a company and month from completed bookings
   Future<ServiceRecordModel?> calculateRecordForCompanyAndMonth(
     String companyId,
-    String month, // Format: "YYYY-MM"
+    String month,
   ) async {
     try {
-      // Get all completed bookings for the company
       final bookings = await _bookingRepository.getAllBookings(
         companyId: companyId,
         status: BookingStatus.done,
       );
 
-      // Filter bookings for the specific month
       final monthBookings = bookings.where((booking) {
         final bookingDate = DateTime.parse(booking.date);
         final bookingMonth = '${bookingDate.year}-${bookingDate.month.toString().padLeft(2, '0')}';
@@ -29,13 +25,11 @@ class ServiceRecordCalculator {
       }).toList();
 
       if (monthBookings.isEmpty) {
-        return null; // No completed bookings for this month
+        return null;
       }
 
-      // Count services by type
       int interiorWashes = 0;
       int exteriorWashes = 0;
-      int tapiterieWashes = 0;
       int completeWashes = 0;
 
       for (var booking in monthBookings) {
@@ -46,24 +40,19 @@ class ServiceRecordCalculator {
           case WashType.exterior:
             exteriorWashes++;
             break;
-          case WashType.tapiterie:
-            tapiterieWashes++;
-            break;
           case WashType.all:
             completeWashes++;
             break;
         }
       }
 
-      // Create service record
       final now = DateTime.now();
       return ServiceRecordModel(
-        id: '', // Will be set when saved
+        id: '',
         companyId: companyId,
         month: month,
         interiorWashes: interiorWashes,
         exteriorWashes: exteriorWashes,
-        tapiterieWashes: tapiterieWashes,
         completeWashes: completeWashes,
         notes: null,
         isFinalized: false,
@@ -76,7 +65,6 @@ class ServiceRecordCalculator {
     }
   }
 
-  /// Get all service records for all companies for a specific month
   Future<Map<String, ServiceRecordModel>> calculateRecordsForMonth(
     String month,
     List<String> companyIds,
@@ -93,7 +81,6 @@ class ServiceRecordCalculator {
     return records;
   }
 
-  /// Get bookings breakdown for a service record
   Future<List<BookingModel>> getBookingsForRecord(
     String companyId,
     String month,
@@ -114,4 +101,3 @@ class ServiceRecordCalculator {
     }
   }
 }
-

@@ -42,7 +42,6 @@ class CompanyModel {
   final String name;
   final ClientType clientType;
   final String email;
-  final String password;
   final String phone;
   final String city;
   final bool isActive;
@@ -60,7 +59,6 @@ class CompanyModel {
     required this.name,
     required this.clientType,
     required this.email,
-    required this.password,
     this.phone = '',
     required this.city,
     required this.isActive,
@@ -81,7 +79,6 @@ class CompanyModel {
       name: data['name'] as String? ?? '',
       clientType: ClientType.fromString(data['clientType'] as String? ?? 'persoana_fizica'),
       email: data['email'] as String? ?? '',
-      password: data['password'] as String? ?? '',
       phone: data['phone'] as String? ?? '',
       city: data['city'] as String? ?? '',
       isActive: data['isActive'] as bool? ?? true,
@@ -99,7 +96,6 @@ class CompanyModel {
       'name': name,
       'clientType': clientType.toString(),
       'email': email,
-      'password': password,
       'phone': phone,
       'city': city,
       'isActive': isActive,
@@ -118,7 +114,6 @@ class CompanyModel {
       name: map['name'] as String,
       clientType: ClientType.fromString(map['clientType'] as String? ?? 'persoana_fizica'),
       email: map['email'] as String,
-      password: map['password'] as String,
       phone: map['phone'] as String? ?? '',
       city: map['city'] as String,
       isActive: map['isActive'] as bool,
@@ -137,7 +132,6 @@ class CompanyModel {
       'name': name,
       'clientType': clientType.toString(),
       'email': email,
-      'password': password,
       'phone': phone,
       'city': city,
       'isActive': isActive,
@@ -155,7 +149,6 @@ class CompanyModel {
     String? name,
     ClientType? clientType,
     String? email,
-    String? password,
     String? phone,
     String? city,
     bool? isActive,
@@ -171,7 +164,6 @@ class CompanyModel {
       name: name ?? this.name,
       clientType: clientType ?? this.clientType,
       email: email ?? this.email,
-      password: password ?? this.password,
       phone: phone ?? this.phone,
       city: city ?? this.city,
       isActive: isActive ?? this.isActive,

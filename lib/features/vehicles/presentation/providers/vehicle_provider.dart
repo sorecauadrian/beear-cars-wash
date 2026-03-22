@@ -47,9 +47,10 @@ final createVehicleProvider =
         }
 
         final vehicle = VehicleModel(
-          id: '', // Will be set by repository
+          id: '',
           companyId: user.companyId!,
           plateNumber: params.plateNumber,
+          vehicleType: params.vehicleType,
           description: params.description,
         );
 
@@ -68,6 +69,7 @@ final updateVehicleProvider =
     final repository = ref.read(vehicleRepositoryProvider);
     final vehicle = params.vehicle.copyWith(
       plateNumber: params.plateNumber,
+      vehicleType: params.vehicleType,
       description: params.description,
     );
     return repository.updateVehicle(vehicle);
@@ -94,10 +96,12 @@ final deleteVehicleProvider = Provider.family<Future<void>, String>(
 /// Create vehicle parameters
 class CreateVehicleParams {
   final String plateNumber;
+  final VehicleType vehicleType;
   final String? description;
 
   CreateVehicleParams({
     required this.plateNumber,
+    required this.vehicleType,
     this.description,
   });
 }
@@ -106,11 +110,13 @@ class CreateVehicleParams {
 class UpdateVehicleParams {
   final VehicleModel vehicle;
   final String plateNumber;
+  final VehicleType vehicleType;
   final String? description;
 
   UpdateVehicleParams({
     required this.vehicle,
     required this.plateNumber,
+    required this.vehicleType,
     this.description,
   });
 }

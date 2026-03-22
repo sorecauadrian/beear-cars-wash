@@ -5,8 +5,8 @@ import 'package:geocoding/geocoding.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/date_time_utils.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../../../../core/widgets/map_picker.dart';
 import '../../../../core/services/notification_sender_service.dart';
 import '../../../vehicles/presentation/providers/vehicle_provider.dart';
@@ -125,8 +125,8 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
           preferredSize: const Size.fromHeight(4),
           child: LinearProgressIndicator(
             value: (_currentStep + 1) / _totalSteps,
-            backgroundColor: AppColors.outline,
-            valueColor: AlwaysStoppedAnimation(AppColors.accent),
+            backgroundColor: Theme.of(context).colorScheme.outline,
+            valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary),
             minHeight: 3,
           ),
         ),
@@ -156,22 +156,33 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
   }
 
   Widget _buildStepIndicator(BuildContext context) {
-    final labels = ['Mașini', 'Dată & Oră', 'Locație', 'Confirmare'];
+    final theme = Theme.of(context);
+    final labels = ['Mașini', 'Dată', 'Locație', 'Verifică'];
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.md),
       child: Row(
         children: List.generate(labels.length, (i) {
           final isActive = i == _currentStep;
           final isDone = i < _currentStep;
           return Expanded(
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                if (i > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Container(
+                      width: 12,
+                      height: 1,
+                      color: isDone ? theme.colorScheme.primary : theme.colorScheme.outline,
+                    ),
+                  ),
                 Container(
                   width: 24,
                   height: 24,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isDone ? AppColors.accent : isActive ? AppColors.accent : AppColors.outline,
+                    color: isDone || isActive ? theme.colorScheme.primary : theme.colorScheme.outline,
                   ),
                   child: Center(
                     child: isDone
@@ -181,28 +192,20 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: isActive ? Colors.white : AppColors.onSurfaceVariant,
+                              color: isActive ? Colors.white : theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                   ),
                 ),
                 const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    labels[i],
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                      color: isActive ? AppColors.onSurface : AppColors.onSurfaceVariant,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                Text(
+                  labels[i],
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                    color: isActive ? theme.colorScheme.onSurface : theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
-                if (i < labels.length - 1)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Container(width: 8, height: 1, color: AppColors.outline),
-                  ),
               ],
             ),
           );
@@ -223,7 +226,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.directions_car_outlined, size: 56, color: AppColors.onSurfaceVariant),
+                Icon(Icons.directions_car_outlined, size: 56, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 const SizedBox(height: AppSpacing.md),
                 Text('Adaugă o mașină mai întâi', style: Theme.of(context).textTheme.titleMedium),
               ],
@@ -237,7 +240,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Selectează mașinile (max 3)',
+                'Selectează mașinile (max 5)',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -255,6 +258,10 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
   }
 
   Widget _buildVehicleCard(BuildContext context, VehicleModel vehicle, bool isSelected, AsyncValue<dynamic> pricingAsync) {
+    final theme = Theme.of(context);
+    final typeIcon = _vehicleTypeIcon(vehicle.vehicleType);
+    final typeColor = _vehicleTypeColor(vehicle.vehicleType);
+
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
@@ -262,7 +269,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
           if (isSelected) {
             _selectedVehicles.removeWhere((v) => v.id == vehicle.id);
             _vehicleWashTypes.remove(vehicle.id);
-          } else if (_selectedVehicles.length < 3) {
+          } else if (_selectedVehicles.length < 5) {
             _selectedVehicles.add(vehicle);
             _vehicleWashTypes[vehicle.id] = WashType.all;
           }
@@ -271,59 +278,98 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-        padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.accentLight : AppColors.surface,
+          color: theme.colorScheme.surface,
           borderRadius: AppSpacing.borderRadiusLg,
           border: Border.all(
-            color: isSelected ? AppColors.accent : AppColors.outline,
+            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline,
             width: isSelected ? 2 : 1,
           ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.directions_car_outlined,
-                  color: isSelected ? AppColors.accent : AppColors.onSurfaceVariant,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        vehicle.plateNumber,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                      if (vehicle.description != null && vehicle.description!.isNotEmpty)
-                        Text(
-                          vehicle.description!,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceVariant),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? theme.colorScheme.primary.withValues(alpha: 0.1)
+                          : typeColor.withValues(alpha: 0.1),
+                      borderRadius: AppSpacing.borderRadiusMd,
+                    ),
+                    child: Icon(
+                      typeIcon,
+                      color: isSelected ? theme.colorScheme.primary : typeColor,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            vehicle.plateNumber,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
                         ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          vehicle.vehicleType.label,
+                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                        ),
+                        if (vehicle.description != null && vehicle.description!.isNotEmpty)
+                          Text(
+                            vehicle.description!,
+                            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isSelected ? AppColors.accent : Colors.transparent,
-                    border: Border.all(color: isSelected ? AppColors.accent : AppColors.outline, width: 2),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isSelected ? theme.colorScheme.primary : Colors.transparent,
+                      border: Border.all(
+                        color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline,
+                        width: 2,
+                      ),
+                    ),
+                    child: isSelected ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
                   ),
-                  child: isSelected ? const Icon(Icons.check, size: 14, color: Colors.white) : null,
-                ),
-              ],
+                ],
+              ),
             ),
             if (isSelected) ...[
-              const SizedBox(height: AppSpacing.md),
-              Text('Tip spălare:', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.onSurfaceVariant)),
-              const SizedBox(height: AppSpacing.sm),
-              ...WashType.values.map((type) => _buildWashTypeRow(context, vehicle, type, pricingAsync)),
+              Divider(height: 1, color: theme.colorScheme.outline),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Tip spălare:', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    const SizedBox(height: AppSpacing.sm),
+                    ...WashType.values.map((type) => _buildWashTypeRow(context, vehicle, type, pricingAsync)),
+                  ],
+                ),
+              ),
             ],
           ],
         ),
@@ -331,12 +377,39 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
     );
   }
 
+  IconData _vehicleTypeIcon(VehicleType type) {
+    switch (type) {
+      case VehicleType.small:
+        return Icons.directions_car_outlined;
+      case VehicleType.suv:
+        return Icons.directions_car_filled_outlined;
+      case VehicleType.busJeep:
+        return Icons.airport_shuttle_outlined;
+      case VehicleType.truck:
+        return Icons.local_shipping_outlined;
+    }
+  }
+
+  Color _vehicleTypeColor(VehicleType type) {
+    switch (type) {
+      case VehicleType.small:
+        return AppColors.info;
+      case VehicleType.suv:
+        return AppColors.secondary;
+      case VehicleType.busJeep:
+        return AppColors.warning;
+      case VehicleType.truck:
+        return AppColors.statusInProgress;
+    }
+  }
+
   Widget _buildWashTypeRow(BuildContext context, VehicleModel vehicle, WashType type, AsyncValue<dynamic> pricingAsync) {
+    final theme = Theme.of(context);
     final isChosen = _vehicleWashTypes[vehicle.id] == type;
     final isExpanded = _expandedWashType[vehicle.id] == type;
     final color = WashTypeUtils.color(type);
     final priceText = pricingAsync.whenOrNull(
-      data: (p) => p != null ? '${p.getPriceForWashType(type).toStringAsFixed(0)} lei' : null,
+      data: (p) => p != null ? '${p.getPrice(vehicle.vehicleType, type).toStringAsFixed(0)} lei' : null,
     );
 
     return Padding(
@@ -344,10 +417,10 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: isChosen ? color.withValues(alpha: 0.1) : AppColors.background,
+          color: isChosen ? color.withValues(alpha: 0.1) : theme.scaffoldBackgroundColor,
           borderRadius: AppSpacing.borderRadiusMd,
           border: Border.all(
-            color: isChosen ? color : AppColors.outline,
+            color: isChosen ? color : theme.colorScheme.outline,
             width: isChosen ? 1.5 : 1,
           ),
         ),
@@ -374,14 +447,14 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isChosen ? color : Colors.transparent,
-                        border: Border.all(color: isChosen ? color : AppColors.outline, width: 2),
+                        border: Border.all(color: isChosen ? color : theme.colorScheme.outline, width: 2),
                       ),
                       child: isChosen
                           ? const Icon(Icons.check, size: 12, color: Colors.white)
                           : null,
                     ),
                     const SizedBox(width: 10),
-                    Icon(WashTypeUtils.icon(type), size: 18, color: isChosen ? color : AppColors.onSurfaceVariant),
+                    Icon(WashTypeUtils.icon(type), size: 18, color: isChosen ? color : theme.colorScheme.onSurfaceVariant),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -389,7 +462,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: isChosen ? FontWeight.w600 : FontWeight.w500,
-                          color: isChosen ? color : AppColors.onSurface,
+                          color: isChosen ? color : theme.colorScheme.onSurface,
                         ),
                       ),
                     ),
@@ -399,14 +472,14 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: isChosen ? color : AppColors.onSurfaceVariant,
+                          color: isChosen ? color : theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     const SizedBox(width: 6),
                     AnimatedRotation(
                       turns: isExpanded ? 0.5 : 0,
                       duration: const Duration(milliseconds: 200),
-                      child: Icon(Icons.expand_more, size: 20, color: AppColors.onSurfaceVariant),
+                      child: Icon(Icons.expand_more, size: 20, color: theme.colorScheme.onSurfaceVariant),
                     ),
                   ],
                 ),
@@ -456,7 +529,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                   child: Text(
                     detail,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.onSurfaceVariant,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       height: 1.4,
                     ),
                   ),
@@ -501,6 +574,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
   }
 
   Widget _buildStep2DateTime(BuildContext context) {
+    final theme = Theme.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
@@ -513,17 +587,17 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
               margin: const EdgeInsets.only(bottom: AppSpacing.lg),
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: AppColors.infoLight,
+                color: AppColors.info.withValues(alpha: theme.brightness == Brightness.dark ? 0.15 : 0.08),
                 borderRadius: AppSpacing.borderRadiusMd,
               ),
               child: Row(
                 children: [
-                  Icon(Icons.schedule_rounded, size: 20, color: AppColors.info),
+                  Icon(Icons.schedule_rounded, size: 20, color: theme.brightness == Brightness.dark ? AppColors.darkInfo : AppColors.info),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: RichText(
                       text: TextSpan(
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.info, height: 1.4),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: theme.brightness == Brightness.dark ? AppColors.darkInfo : AppColors.info, height: 1.4),
                         children: [
                           const TextSpan(text: 'Durată estimată pentru '),
                           TextSpan(
@@ -551,30 +625,30 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
             child: Container(
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: theme.colorScheme.surface,
                 borderRadius: AppSpacing.borderRadiusMd,
-                border: Border.all(color: AppColors.outline),
+                border: Border.all(color: theme.colorScheme.outline),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.calendar_today_rounded, color: AppColors.accent),
+                  Icon(Icons.calendar_today_rounded, color: theme.colorScheme.primary),
                   const SizedBox(width: AppSpacing.md),
                   Text(
                     DateTimeUtils.formatDateDisplay(_selectedDate),
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w500),
+                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w500),
                   ),
                   const Spacer(),
-                  Icon(Icons.chevron_right, color: AppColors.onSurfaceVariant),
+                  Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
                 ],
               ),
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text('Selectează ora pentru fiecare mașină', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+          Text('Selectează ora pentru fiecare mașină', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: AppSpacing.xs),
           Text(
             'Fiecare mașină ocupă un interval de ~${AppConstants.slotDurationMinutes} min',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceVariant),
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: AppSpacing.md),
           ..._selectedVehicles.map((vehicle) => _buildVehicleSlotPicker(context, vehicle)),
@@ -582,9 +656,9 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
             const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
-                Container(width: 12, height: 12, decoration: BoxDecoration(color: AppColors.outline, borderRadius: BorderRadius.circular(3))),
+                Container(width: 12, height: 12, decoration: BoxDecoration(color: Theme.of(context).colorScheme.outline, borderRadius: BorderRadius.circular(3))),
                 const SizedBox(width: AppSpacing.xs),
-                Text('Indisponibil', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceVariant)),
+                Text('Indisponibil', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
               ],
             ),
           ],
@@ -612,10 +686,10 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
       margin: const EdgeInsets.only(bottom: AppSpacing.lg),
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: theme.colorScheme.surface,
         borderRadius: AppSpacing.borderRadiusLg,
         border: Border.all(
-          color: selectedSlot != null ? AppColors.accent.withValues(alpha: 0.4) : AppColors.outline,
+          color: selectedSlot != null ? theme.colorScheme.primary.withValues(alpha: 0.4) : theme.colorScheme.outline,
         ),
       ),
       child: Column(
@@ -626,9 +700,18 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
               Icon(Icons.directions_car_outlined, size: 18, color: WashTypeUtils.color(washType)),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: Text(
-                  vehicle.plateNumber,
-                  style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      vehicle.plateNumber,
+                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      vehicle.vehicleType.label,
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontSize: 11),
+                    ),
+                  ],
                 ),
               ),
               Container(
@@ -679,19 +762,19 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppColors.accent
+                        ? theme.colorScheme.primary
                         : isOtherVehicle
-                            ? AppColors.accent.withValues(alpha: 0.08)
+                            ? theme.colorScheme.primary.withValues(alpha: 0.08)
                             : isExternal
-                                ? AppColors.surfaceVariant
-                                : AppColors.surface,
+                                ? theme.colorScheme.surfaceContainerHighest
+                                : theme.colorScheme.surface,
                     borderRadius: AppSpacing.borderRadiusMd,
                     border: Border.all(
                       color: isSelected
-                          ? AppColors.accent
+                          ? theme.colorScheme.primary
                           : isOtherVehicle
-                              ? AppColors.accent.withValues(alpha: 0.3)
-                              : AppColors.outline,
+                              ? theme.colorScheme.primary.withValues(alpha: 0.3)
+                              : theme.colorScheme.outline,
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -703,10 +786,10 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                       color: isSelected
                           ? Colors.white
                           : isOtherVehicle
-                              ? AppColors.accent.withValues(alpha: 0.5)
+                              ? theme.colorScheme.primary.withValues(alpha: 0.5)
                               : isExternal
-                                  ? AppColors.onSurfaceVariant.withValues(alpha: 0.5)
-                                  : AppColors.onSurface,
+                                  ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
+                                  : theme.colorScheme.onSurface,
                       decoration: isExternal ? TextDecoration.lineThrough : null,
                     ),
                   ),
@@ -790,7 +873,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
           const SizedBox(height: AppSpacing.sm),
           Text(
             'Selectează locația pe hartă sau introdu adresa manual',
-            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceVariant),
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: AppSpacing.lg),
 
@@ -800,57 +883,55 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
             borderRadius: AppSpacing.borderRadiusLg,
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: theme.colorScheme.surface,
                 borderRadius: AppSpacing.borderRadiusLg,
                 border: Border.all(
-                  color: hasCoords ? AppColors.accent : AppColors.outline,
+                  color: hasCoords ? theme.colorScheme.primary : theme.colorScheme.outline,
                   width: hasCoords ? 1.5 : 1,
                 ),
               ),
               child: Column(
                 children: [
-                  // Map preview area
                   Container(
                     height: 120,
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: hasCoords
-                          ? AppColors.accent.withValues(alpha: 0.06)
-                          : AppColors.surfaceVariant,
+                          ? theme.colorScheme.primary.withValues(alpha: 0.06)
+                          : theme.colorScheme.surfaceContainerHighest,
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
                     ),
                     child: hasCoords
                         ? Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.location_on_rounded, size: 36, color: AppColors.accent),
+                              Icon(Icons.location_on_rounded, size: 36, color: theme.colorScheme.primary),
                               const SizedBox(height: 4),
                               Text(
                                 'Locație selectată',
                                 style: theme.textTheme.labelMedium?.copyWith(
-                                  color: AppColors.accent,
+                                  color: theme.colorScheme.primary,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                               Text(
                                 '${_selectedLat!.toStringAsFixed(4)}, ${_selectedLng!.toStringAsFixed(4)}',
-                                style: theme.textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceVariant),
+                                style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                               ),
                             ],
                           )
                         : Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.map_outlined, size: 36, color: AppColors.onSurfaceVariant),
+                              Icon(Icons.map_outlined, size: 36, color: theme.colorScheme.onSurfaceVariant),
                               const SizedBox(height: 4),
                               Text(
                                 'Apasă pentru a selecta pe hartă',
-                                style: theme.textTheme.labelMedium?.copyWith(color: AppColors.onSurfaceVariant),
+                                style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                               ),
                             ],
                           ),
                   ),
-                  // Button row
                   Padding(
                     padding: const EdgeInsets.all(12),
                     child: Row(
@@ -858,18 +939,18 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                         Icon(
                           hasCoords ? Icons.edit_location_alt_outlined : Icons.add_location_alt_outlined,
                           size: 20,
-                          color: AppColors.accent,
+                          color: theme.colorScheme.primary,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           hasCoords ? 'Schimbă locația pe hartă' : 'Selectează pe hartă',
                           style: theme.textTheme.labelLarge?.copyWith(
-                            color: AppColors.accent,
+                            color: theme.colorScheme.primary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         const Spacer(),
-                        Icon(Icons.chevron_right, size: 20, color: AppColors.accent),
+                        Icon(Icons.chevron_right, size: 20, color: theme.colorScheme.primary),
                       ],
                     ),
                   ),
@@ -886,7 +967,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
               const Expanded(child: Divider()),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text('sau introdu manual', style: theme.textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceVariant)),
+                child: Text('sau introdu manual', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
               ),
               const Expanded(child: Divider()),
             ],
@@ -904,7 +985,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
               suffixIcon: _addressController.text.isNotEmpty && !hasCoords
                   ? Tooltip(
                       message: 'Adresa va fi geocodată automat',
-                      child: Icon(Icons.info_outline, size: 18, color: AppColors.onSurfaceVariant),
+                      child: Icon(Icons.info_outline, size: 18, color: theme.colorScheme.onSurfaceVariant),
                     )
                   : null,
             ),
@@ -925,17 +1006,17 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
             Container(
               padding: const EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
-                color: AppColors.warningLight,
+                color: AppColors.warning.withValues(alpha: theme.brightness == Brightness.dark ? 0.15 : 0.08),
                 borderRadius: AppSpacing.borderRadiusSm,
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, size: 16, color: AppColors.warning),
+                  Icon(Icons.info_outline, size: 16, color: theme.brightness == Brightness.dark ? AppColors.darkWarning : AppColors.warning),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Recomandăm selectarea pe hartă pentru localizare precisă.',
-                      style: theme.textTheme.labelSmall?.copyWith(color: AppColors.warning),
+                      style: theme.textTheme.labelSmall?.copyWith(color: theme.brightness == Brightness.dark ? AppColors.darkWarning : AppColors.warning),
                     ),
                   ),
                 ],
@@ -979,36 +1060,61 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
           Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: theme.colorScheme.surface,
               borderRadius: AppSpacing.borderRadiusLg,
-              border: Border.all(color: AppColors.outline),
+              border: Border.all(color: theme.colorScheme.outline),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Mașini', style: theme.textTheme.labelMedium?.copyWith(color: AppColors.onSurfaceVariant)),
+                Text('Mașini', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
-                ..._selectedVehicles.map((v) {
+                ..._selectedVehicles.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final v = entry.value;
                   final washType = _vehicleWashTypes[v.id] ?? WashType.all;
-                  final price = pricingData?.getPriceForWashType(washType);
+                  final basePrice = pricingData?.getPrice(v.vehicleType, washType);
+                  final hasDiscount = index > 0 && pricingData != null;
+                  final discount = hasDiscount ? pricingData.multiVehicleDiscount : 0.0;
+                  final finalPrice = basePrice != null ? basePrice - discount : null;
+
                   return Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                     child: Row(
                       children: [
-                        Icon(Icons.directions_car_outlined, size: 18, color: AppColors.onSurfaceVariant),
+                        Icon(Icons.directions_car_outlined, size: 18, color: theme.colorScheme.onSurfaceVariant),
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(
-                          child: Text(v.plateNumber, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(v.plateNumber, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                              Text(
+                                v.vehicleType.label,
+                                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontSize: 11),
+                              ),
+                            ],
+                          ),
                         ),
                         Text(
                           WashTypeUtils.label(washType),
                           style: theme.textTheme.bodySmall?.copyWith(color: WashTypeUtils.color(washType), fontWeight: FontWeight.w600),
                         ),
-                        if (price != null) ...[
+                        if (finalPrice != null) ...[
                           const SizedBox(width: AppSpacing.sm),
-                          Text(
-                            '${price.toStringAsFixed(0)} lei',
-                            style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                '${finalPrice.toStringAsFixed(0)} lei',
+                                style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                              if (hasDiscount)
+                                Text(
+                                  '-${discount.toStringAsFixed(0)} lei',
+                                  style: theme.textTheme.labelSmall?.copyWith(color: AppColors.success, fontWeight: FontWeight.w600),
+                                ),
+                            ],
                           ),
                         ],
                       ],
@@ -1017,13 +1123,30 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                 }),
                 if (pricingData != null) ...[
                   const Divider(height: AppSpacing.lg),
+                  if (_selectedVehicles.length > 1)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Reducere vehicule suplimentare',
+                            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.success, fontWeight: FontWeight.w500),
+                          ),
+                          Text(
+                            '-${((_selectedVehicles.length - 1) * pricingData.multiVehicleDiscount).toStringAsFixed(0)} lei',
+                            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.success, fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
+                    ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Total estimat', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
                       Text(
-                        '${_selectedVehicles.fold<double>(0, (sum, v) => sum + (pricingData.getPriceForWashType(_vehicleWashTypes[v.id] ?? WashType.all))).toStringAsFixed(0)} lei',
-                        style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700, color: AppColors.accent),
+                        '${_calculateTotal(pricingData).toStringAsFixed(0)} lei',
+                        style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700, color: theme.colorScheme.primary),
                       ),
                     ],
                   ),
@@ -1037,18 +1160,18 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
           Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: theme.colorScheme.surface,
               borderRadius: AppSpacing.borderRadiusLg,
-              border: Border.all(color: AppColors.outline),
+              border: Border.all(color: theme.colorScheme.outline),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Dată & Oră', style: theme.textTheme.labelMedium?.copyWith(color: AppColors.onSurfaceVariant)),
+                Text('Dată & Oră', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
                 Row(
                   children: [
-                    Icon(Icons.calendar_today_rounded, size: 18, color: AppColors.onSurfaceVariant),
+                    Icon(Icons.calendar_today_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
                     const SizedBox(width: AppSpacing.sm),
                     Text(DateTimeUtils.formatDateDisplay(_selectedDate), style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
                   ],
@@ -1060,11 +1183,11 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                     padding: const EdgeInsets.only(top: AppSpacing.xs),
                     child: Row(
                       children: [
-                        Icon(Icons.access_time_rounded, size: 18, color: AppColors.onSurfaceVariant),
+                        Icon(Icons.access_time_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
                         const SizedBox(width: AppSpacing.sm),
                         Text(
                           '${v.plateNumber}: ',
-                          style: theme.textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceVariant),
+                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                         ),
                         Text(
                           slot ?? '-',
@@ -1077,11 +1200,11 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                 const SizedBox(height: AppSpacing.xs),
                 Row(
                   children: [
-                    Icon(Icons.timer_outlined, size: 18, color: AppColors.onSurfaceVariant),
+                    Icon(Icons.timer_outlined, size: 18, color: theme.colorScheme.onSurfaceVariant),
                     const SizedBox(width: AppSpacing.sm),
                     Text(
                       'Durată estimată: $_totalEstimatedDuration',
-                      style: theme.textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w500),
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
@@ -1094,18 +1217,18 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
           Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: theme.colorScheme.surface,
               borderRadius: AppSpacing.borderRadiusLg,
-              border: Border.all(color: AppColors.outline),
+              border: Border.all(color: theme.colorScheme.outline),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Locație', style: theme.textTheme.labelMedium?.copyWith(color: AppColors.onSurfaceVariant)),
+                Text('Locație', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.sm),
                 Row(
                   children: [
-                    Icon(Icons.location_on_outlined, size: 18, color: AppColors.onSurfaceVariant),
+                    Icon(Icons.location_on_outlined, size: 18, color: theme.colorScheme.onSurfaceVariant),
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
@@ -1119,7 +1242,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                   const SizedBox(height: AppSpacing.xs),
                   Row(
                     children: [
-                      Icon(Icons.note_outlined, size: 18, color: AppColors.onSurfaceVariant),
+                      Icon(Icons.note_outlined, size: 18, color: theme.colorScheme.onSurfaceVariant),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(child: Text(_descriptionController.text, style: theme.textTheme.bodySmall)),
                     ],
@@ -1133,13 +1256,26 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
     );
   }
 
+  double _calculateTotal(dynamic pricingData) {
+    double total = 0;
+    for (int i = 0; i < _selectedVehicles.length; i++) {
+      final v = _selectedVehicles[i];
+      final washType = _vehicleWashTypes[v.id] ?? WashType.all;
+      final basePrice = pricingData.getPrice(v.vehicleType, washType) as double;
+      final discount = i > 0 ? (pricingData.multiVehicleDiscount as double) : 0.0;
+      total += basePrice - discount;
+    }
+    return total;
+  }
+
   Widget _buildNavigationBar(BuildContext context) {
     final isLastStep = _currentStep == _totalSteps - 1;
+    final theme = Theme.of(context);
     return Container(
       padding: EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, MediaQuery.of(context).padding.bottom + AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.outline.withValues(alpha: 0.5))),
+        color: theme.colorScheme.surface,
+        border: Border(top: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.5))),
       ),
       child: Row(
         children: [
@@ -1237,7 +1373,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: Text(AppErrorHandler.userFriendlyMessage(e)),
           backgroundColor: AppColors.error,
         ),
       );

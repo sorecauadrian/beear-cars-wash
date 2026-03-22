@@ -60,8 +60,36 @@ class AdminMoreScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            loading: () => const SizedBox(height: 72),
-            error: (_, __) => const SizedBox.shrink(),
+            loading: () => Container(
+              height: 72,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: AppSpacing.borderRadiusLg,
+              ),
+              child: const Center(
+                child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+              ),
+            ),
+            error: (error, __) => Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: AppSpacing.borderRadiusLg,
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline, color: Colors.white.withValues(alpha: 0.7)),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      'Nu s-au putut încărca datele',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.7)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
 
@@ -105,6 +133,7 @@ class AdminMoreScreen extends ConsumerWidget {
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: AppSpacing.borderRadiusMd,
@@ -117,13 +146,13 @@ class AdminMoreScreen extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: isDestructive
                     ? AppColors.error.withValues(alpha: 0.1)
-                    : AppColors.surfaceVariant,
+                    : theme.colorScheme.surfaceContainerHighest,
                 borderRadius: AppSpacing.borderRadiusSm,
               ),
               child: Icon(
                 icon,
                 size: 22,
-                color: isDestructive ? AppColors.error : AppColors.onSurfaceVariant,
+                color: isDestructive ? AppColors.error : theme.colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(width: AppSpacing.md),
@@ -133,21 +162,21 @@ class AdminMoreScreen extends ConsumerWidget {
                 children: [
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    style: theme.textTheme.titleSmall?.copyWith(
                       color: isDestructive ? AppColors.error : null,
                     ),
                   ),
                   Text(
                     subtitle,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.onSurfaceVariant,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
               ),
             ),
             if (!isDestructive)
-              Icon(Icons.chevron_right, color: AppColors.onSurfaceVariant, size: 20),
+              Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant, size: 20),
           ],
         ),
       ),

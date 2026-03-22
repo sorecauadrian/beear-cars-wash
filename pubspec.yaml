@@ -2,7 +2,7 @@ name: beear_cars_wash
 description: "B2B on-site car wash service app for Beear Cars Wash"
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: ^3.8.1
@@ -32,9 +32,6 @@ dependencies:
   google_maps_flutter: ^2.9.0
   geocoding: ^3.0.0
   permission_handler: ^11.4.0
-
-  # Camera & Text Recognition (for license plate scanning)
-  mobile_scanner: ^5.2.3
 
   # Utilities
   intl: ^0.20.2
@@ -82,4 +79,4 @@ flutter:
   fonts:
     - family: NotoSans
       fonts:
-        - asset: assets/fonts/NotoSans.ttf
+        - asset: assets/fonts/NotoSans-Variable.ttf

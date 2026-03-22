@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../../../../core/routing/route_names.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -126,7 +127,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
       }
     } catch (e) {
       if (!mounted) return;
-      _showError(e.toString().replaceFirst('Exception: ', ''));
+      _showError(AppErrorHandler.userFriendlyMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -189,7 +190,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
       _showSuccess('Cont creat cu succes!');
     } catch (e) {
       if (!mounted) return;
-      _showError(e.toString().replaceFirst('Exception: ', ''));
+      _showError(AppErrorHandler.userFriendlyMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -208,7 +209,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
       _switchMode(AuthMode.login);
     } catch (e) {
       if (!mounted) return;
-      _showError(e.toString().replaceFirst('Exception: ', ''));
+      _showError(AppErrorHandler.userFriendlyMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -305,12 +306,21 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
 
     return Column(
       children: [
-        Image.asset(
-          AssetPaths.logoNoTextWhite,
-          height: 72,
-          width: 72,
-          fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => const Icon(Icons.local_car_wash, size: 56, color: Colors.white),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 16, offset: const Offset(0, 4))],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Image.asset(
+              AssetPaths.logoNoTextWhite,
+              height: 80,
+              width: 80,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Icon(Icons.local_car_wash, size: 56, color: Colors.white),
+            ),
+          ),
         ),
         const SizedBox(height: 12),
         Text(
@@ -328,9 +338,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     return Container(
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 24, offset: const Offset(0, 8))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 24, offset: const Offset(0, 8))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -371,11 +381,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
 
       // Shared auth fields
       const SizedBox(height: 24),
-      Divider(color: AppColors.outline),
+      Divider(color: theme.colorScheme.outline),
       const SizedBox(height: 16),
       Text(
         'Date autentificare',
-        style: theme.textTheme.labelLarge?.copyWith(color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600),
+        style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
       ),
       const SizedBox(height: 16),
       _buildEmailField(),
@@ -440,7 +450,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
         padding: const EdgeInsets.only(bottom: AppSpacing.sm),
         child: Text(
           'Date firmă',
-          style: theme.textTheme.labelLarge?.copyWith(color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600),
+          style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
         ),
       ),
       TextFormField(
@@ -535,16 +545,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
           children: [
             Text(
               'Date bancare',
-              style: theme.textTheme.labelLarge?.copyWith(color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600),
+              style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
             ),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: AppColors.surfaceVariant,
+                color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: AppSpacing.borderRadiusFull,
               ),
-              child: Text('opțional', style: theme.textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceVariant)),
+              child: Text('opțional', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
             ),
           ],
         ),
@@ -648,23 +658,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 24,
-          height: 24,
-          child: Checkbox(
-            value: _acceptedTerms,
-            onChanged: _isLoading ? null : (v) => setState(() => _acceptedTerms = v ?? false),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            visualDensity: VisualDensity.compact,
-          ),
+        Checkbox(
+          value: _acceptedTerms,
+          onChanged: _isLoading ? null : (v) => setState(() => _acceptedTerms = v ?? false),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: GestureDetector(
             onTap: _isLoading ? null : () => setState(() => _acceptedTerms = !_acceptedTerms),
             child: Text.rich(
               TextSpan(
-                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceVariant, height: 1.5),
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.5),
                 children: [
                   const TextSpan(text: 'Am citit și sunt de acord cu '),
                   WidgetSpan(
@@ -675,10 +679,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                       child: Text(
                         'Termenii și Condițiile',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.accent,
+                          color: theme.colorScheme.primary,
                           fontWeight: FontWeight.w600,
                           decoration: TextDecoration.underline,
-                          decorationColor: AppColors.accent,
+                          decorationColor: theme.colorScheme.primary,
                         ),
                       ),
                     ),
@@ -692,10 +696,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                       child: Text(
                         'Politica de Confidențialitate',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.accent,
+                          color: theme.colorScheme.primary,
                           fontWeight: FontWeight.w600,
                           decoration: TextDecoration.underline,
-                          decorationColor: AppColors.accent,
+                          decorationColor: theme.colorScheme.primary,
                         ),
                       ),
                     ),
@@ -716,7 +720,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
       children: [
         Text(
           'Tip cont',
-          style: theme.textTheme.labelLarge?.copyWith(color: AppColors.onSurfaceVariant),
+          style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: 10),
         Row(
@@ -745,15 +749,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            color: isSelected ? AppColors.accent.withValues(alpha: 0.08) : AppColors.background,
+            color: isSelected
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.08)
+                : Theme.of(context).colorScheme.surfaceContainerHighest,
             border: Border.all(
-              color: isSelected ? AppColors.accent : AppColors.outline,
+              color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
               width: isSelected ? 2 : 1,
             ),
           ),
           child: Column(
             children: [
-              Icon(icon, size: 28, color: isSelected ? AppColors.accent : AppColors.onSurfaceVariant),
+              Icon(icon, size: 28, color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
               const SizedBox(height: 6),
               Text(
                 label,
@@ -761,7 +767,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected ? AppColors.accent : AppColors.onSurfaceVariant,
+                  color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],

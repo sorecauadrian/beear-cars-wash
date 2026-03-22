@@ -2,14 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_spacing.dart';
-import '../../../../../features/vehicles/data/repositories/vehicle_repository.dart';
-import '../../../../../features/vehicles/data/models/vehicle_model.dart';
 import '../../../data/models/booking_model.dart';
 import '../../providers/booking_provider.dart';
-import '../../../../../shared/widgets/booking_card.dart';
+import '../../../../../shared/widgets/booking_card_with_vehicle.dart';
 import '../../../../../shared/widgets/empty_state.dart';
 import '../../../../../shared/widgets/skeleton_loader.dart';
-import '../../../../../shared/widgets/section_header.dart';
 
 class CustomerBookingsListScreen extends ConsumerStatefulWidget {
   const CustomerBookingsListScreen({super.key});
@@ -68,7 +65,7 @@ class _CustomerBookingsListScreenState extends ConsumerState<CustomerBookingsLis
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     final booking = filtered[index];
-                    return _BookingCardWithVehicle(booking: booking);
+                    return BookingCardWithVehicle(booking: booking);
                   },
                 ),
               );
@@ -90,26 +87,3 @@ class _CustomerBookingsListScreenState extends ConsumerState<CustomerBookingsLis
   }
 }
 
-class _BookingCardWithVehicle extends StatelessWidget {
-  final BookingModel booking;
-
-  const _BookingCardWithVehicle({required this.booking});
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<VehicleModel?>(
-      future: _getVehicle(booking.vehicleId),
-      builder: (context, snap) {
-        return BookingCard(booking: booking, vehiclePlate: snap.data?.plateNumber);
-      },
-    );
-  }
-
-  Future<VehicleModel?> _getVehicle(String id) async {
-    try {
-      return await VehicleRepository().getVehicleById(id);
-    } catch (_) {
-      return null;
-    }
-  }
-}

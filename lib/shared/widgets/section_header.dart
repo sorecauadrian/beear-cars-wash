@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 
 class SectionHeader extends StatelessWidget {
@@ -21,14 +20,15 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: padding,
       child: Row(
         children: [
           Text(
             title,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: AppColors.onSurfaceVariant,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.3,
             ),
@@ -39,8 +39,8 @@ class SectionHeader extends StatelessWidget {
               onTap: onTrailingTap,
               child: Text(
                 trailing!,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.accent,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.primary,
                   fontWeight: FontWeight.w600,
                 ),
               ),

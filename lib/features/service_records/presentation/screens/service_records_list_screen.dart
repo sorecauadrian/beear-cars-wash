@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/routing/route_names.dart';
-import '../../../../core/widgets/app_logo.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../../../../features/companies/data/repositories/company_repository.dart';
 import '../../../../features/companies/data/models/company_model.dart';
 import '../../../../features/bookings/data/models/booking_model.dart';
@@ -14,7 +12,6 @@ import '../../../../features/vehicles/presentation/providers/vehicle_provider.da
 import '../../../../features/pricing/presentation/providers/pricing_provider.dart';
 import '../../data/models/service_record_model.dart';
 import '../services/export_service.dart';
-import 'package:go_router/go_router.dart';
 
 /// Service records list screen - auto-generated from completed bookings
 class ServiceRecordsListScreen extends ConsumerStatefulWidget {
@@ -46,45 +43,34 @@ class _ServiceRecordsListScreenState
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final bookingsAsync = ref.watch(allBookingsProvider);
     final companies = ref.watch(_companiesAsync);
 
     return Scaffold(
       appBar: AppBar(
-        title: const AppLogo(height: 32),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: () async {
-              final authRepo = ref.read(authRepositoryProvider);
-              await authRepo.signOut();
-              if (context.mounted) {
-                context.go(RouteNames.login);
-              }
-            },
-          ),
-        ],
+        title: const Text('Registre servicii'),
       ),
       body: Column(
         children: [
           // Visible filters
           Container(
             padding: const EdgeInsets.all(16),
-            color: AppColors.cream,
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
             child: Column(
               children: [
                 // Company filter
                 ref.watch(_companiesAsync).when(
                   data: (companiesList) => DropdownButtonFormField<String>(
                     value: _selectedCompanyId,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Companie',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.business),
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.business),
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: theme.colorScheme.surface,
                     ),
+                    dropdownColor: theme.colorScheme.surface,
                     items: [
                       const DropdownMenuItem<String>(
                         value: null,
@@ -122,7 +108,7 @@ class _ServiceRecordsListScreenState
                             )
                           : null,
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: theme.colorScheme.surface,
                     ),
                     child: Text(
                       _selectedMonth != null
@@ -148,23 +134,23 @@ class _ServiceRecordsListScreenState
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.description_outlined,
                           size: 64,
-                          color: AppColors.onSurfaceVariant,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(height: 16),
-                        const Text(
+                        Text(
                           'Nu există servicii finalizate',
                           style: TextStyle(
                             fontSize: 18,
-                            color: AppColors.onSurfaceVariant,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
+                        Text(
                           'Serviciile finalizate vor apărea aici',
-                          style: TextStyle(color: AppColors.onSurfaceVariant),
+                          style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                         ),
                       ],
                     ),
@@ -183,18 +169,18 @@ class _ServiceRecordsListScreenState
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.filter_alt_outlined,
                               size: 64,
-                              color: AppColors.onSurfaceVariant,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                             const SizedBox(height: 16),
-                            const Text(
+                            Text(
                               'Nu există înregistrări pentru filtrele selectate',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 18,
-                                color: AppColors.onSurfaceVariant,
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -219,7 +205,6 @@ class _ServiceRecordsListScreenState
                               name: 'Companie necunoscută',
                               clientType: ClientType.persoanaJuridica,
                               email: '',
-                              password: '',
                               city: '',
                               isActive: true,
                             ),
@@ -241,7 +226,7 @@ class _ServiceRecordsListScreenState
                       children: [
                         const Icon(Icons.error_outline, size: 64, color: AppColors.error),
                         const SizedBox(height: 16),
-                        Text('Eroare la încărcarea companiilor: $error'),
+                        Text('Eroare la încărcarea companiilor: ${AppErrorHandler.userFriendlyMessage(error)}'),
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () {
@@ -262,7 +247,7 @@ class _ServiceRecordsListScreenState
                     const Icon(Icons.error_outline,
                         size: 64, color: AppColors.error),
                     const SizedBox(height: 16),
-                    Text('Eroare: $error'),
+                    Text(AppErrorHandler.userFriendlyMessage(error)),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () {
@@ -325,7 +310,6 @@ class _ServiceRecordsListScreenState
           'month': bookingMonth,
           'interiorWashes': 0,
           'exteriorWashes': 0,
-          'tapiterieWashes': 0,
           'completeWashes': 0,
           'bookings': <BookingModel>[],
         };
@@ -340,9 +324,6 @@ class _ServiceRecordsListScreenState
           break;
         case WashType.exterior:
           record['exteriorWashes'] = (record['exteriorWashes'] as int) + 1;
-          break;
-        case WashType.tapiterie:
-          record['tapiterieWashes'] = (record['tapiterieWashes'] as int) + 1;
           break;
         case WashType.all:
           record['completeWashes'] = (record['completeWashes'] as int) + 1;
@@ -381,7 +362,6 @@ class _ServiceRecordsListScreenState
     final bookings = record['bookings'] as List<BookingModel>;
     final totalServices = (record['interiorWashes'] as int) +
         (record['exteriorWashes'] as int) +
-        (record['tapiterieWashes'] as int) +
         (record['completeWashes'] as int);
 
     return Card(
@@ -399,7 +379,7 @@ class _ServiceRecordsListScreenState
                 children: [
                   Icon(
                     Icons.business,
-                    color: AppColors.primary,
+                    color: theme.colorScheme.primary,
                     size: 24,
                   ),
                   const SizedBox(width: 8),
@@ -408,20 +388,20 @@ class _ServiceRecordsListScreenState
                       company?.name ?? 'Companie necunoscută',
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: AppColors.darkNavy,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.download),
-                    color: AppColors.primary,
+                    color: theme.colorScheme.primary,
                     tooltip: 'Exportă',
                     onPressed: () => _exportRecord(context, record, company, bookings),
                   ),
                   Icon(
                     Icons.arrow_forward_ios,
                     size: 16,
-                    color: AppColors.onSurfaceVariant,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ],
               ),
@@ -429,7 +409,7 @@ class _ServiceRecordsListScreenState
               Text(
                 _formatMonth(record['month'] as String),
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.onSurfaceVariant,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 16),
@@ -447,27 +427,15 @@ class _ServiceRecordsListScreenState
                     child: _buildServiceBadge(
                       'Exterior',
                       record['exteriorWashes'] as int,
-                      AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildServiceBadge(
-                      'Tapițerie',
-                      record['tapiterieWashes'] as int,
-                      AppColors.warning,
+                      AppColors.info,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildServiceBadge(
-                      'Complet',
+                      'Int + Ext',
                       record['completeWashes'] as int,
-                      AppColors.darkNavy,
+                      AppColors.accent,
                     ),
                   ),
                 ],
@@ -476,7 +444,7 @@ class _ServiceRecordsListScreenState
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.cream,
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -491,7 +459,7 @@ class _ServiceRecordsListScreenState
                     Text(
                       '$totalServices',
                       style: theme.textTheme.headlineSmall?.copyWith(
-                        color: AppColors.primary,
+                        color: theme.colorScheme.primary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -502,7 +470,7 @@ class _ServiceRecordsListScreenState
               Text(
                 '${bookings.length} servicii finalizate • Apasă pentru detalii',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.onSurfaceVariant,
+                  color: theme.colorScheme.onSurfaceVariant,
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -555,72 +523,75 @@ class _ServiceRecordsListScreenState
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.outline,
-                  borderRadius: BorderRadius.circular(2),
+      builder: (context) {
+        final theme = Theme.of(context);
+        return DraggableScrollableSheet(
+          initialChildSize: 0.9,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) => Container(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.outline,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            company?.name ?? 'Companie necunoscută',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _formatMonth(record['month'] as String),
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: AppColors.onSurfaceVariant,
-                                ),
-                          ),
-                        ],
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              company?.name ?? 'Companie necunoscută',
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _formatMonth(record['month'] as String),
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  controller: scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: bookings.length,
-                  itemBuilder: (context, index) {
-                    final booking = bookings[index];
-                    return _buildBookingDetailCard(context, booking);
-                  },
+                Expanded(
+                  child: ListView.builder(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: bookings.length,
+                    itemBuilder: (context, index) {
+                      final booking = bookings[index];
+                      return _buildBookingDetailCard(context, booking);
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -655,16 +626,16 @@ class _ServiceRecordsListScreenState
               ],
             ),
             const SizedBox(height: 12),
-            _buildDetailRow(Icons.calendar_today, 'Data',
+            _buildDetailRow(context, Icons.calendar_today, 'Data',
                 DateFormat('dd MMMM yyyy', 'ro_RO').format(bookingDate)),
             const SizedBox(height: 8),
-            _buildDetailRow(Icons.access_time, 'Ora',
+            _buildDetailRow(context, Icons.access_time, 'Ora',
                 '${booking.slotStart} - ${booking.slotEnd}'),
             const SizedBox(height: 8),
-            _buildDetailRow(Icons.location_on, 'Locație', booking.addressText),
+            _buildDetailRow(context, Icons.location_on, 'Locație', booking.addressText),
             if (booking.description != null && booking.description!.isNotEmpty) ...[
               const SizedBox(height: 8),
-              _buildDetailRow(Icons.note, 'Note', booking.description!),
+              _buildDetailRow(context, Icons.note, 'Note', booking.description!),
             ],
           ],
         ),
@@ -672,11 +643,12 @@ class _ServiceRecordsListScreenState
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value) {
+  Widget _buildDetailRow(BuildContext context, IconData icon, String label, String value) {
+    final theme = Theme.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: AppColors.onSurfaceVariant),
+        Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
@@ -686,7 +658,7 @@ class _ServiceRecordsListScreenState
                 label,
                 style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.onSurfaceVariant,
+                  color: theme.colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -711,8 +683,6 @@ class _ServiceRecordsListScreenState
         return Icons.air;
       case WashType.exterior:
         return Icons.water_drop;
-      case WashType.tapiterie:
-        return Icons.chair;
       case WashType.all:
         return Icons.all_inclusive;
     }
@@ -723,11 +693,9 @@ class _ServiceRecordsListScreenState
       case WashType.interior:
         return AppColors.secondary;
       case WashType.exterior:
-        return AppColors.primary;
-      case WashType.tapiterie:
-        return AppColors.warning;
+        return AppColors.info;
       case WashType.all:
-        return AppColors.darkNavy;
+        return AppColors.accent;
     }
   }
 
@@ -737,10 +705,8 @@ class _ServiceRecordsListScreenState
         return 'Spălare Interior';
       case WashType.exterior:
         return 'Spălare Exterior';
-      case WashType.tapiterie:
-        return 'Spălare Tapițerie';
       case WashType.all:
-        return 'Spălare Completă';
+        return 'Spălare Interior + Exterior';
     }
   }
 
@@ -763,134 +729,136 @@ class _ServiceRecordsListScreenState
 
     final format = await showDialog<String>(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          constraints: const BoxConstraints(maxWidth: 400),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
+      builder: (context) {
+        final theme = Theme.of(context);
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.download,
+                        color: theme.colorScheme.primary,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Exportă înregistrare',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            company?.name ?? 'Companie necunoscută',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _formatMonth(record['month'] as String),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Format selection
+                Text(
+                  'Selectează formatul:',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Excel option
+                InkWell(
+                  onTap: () => Navigator.pop(context, 'excel'),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
+                      color: AppColors.successLight,
+                      border: Border.all(color: AppColors.success.withValues(alpha: 0.3), width: 2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
-                      Icons.download,
-                      color: AppColors.primary,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          'Exportă înregistrare',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.darkNavy,
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.success.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.table_chart,
+                            color: AppColors.success,
+                            size: 28,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          company?.name ?? 'Companie necunoscută',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.onSurfaceVariant,
+                      const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Excel (.xlsx)',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.success,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Tabel editabil',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: AppColors.success,
+                                ),
+                              ),
+                            ],
                           ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          color: AppColors.success,
+                          size: 20,
                         ),
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _formatMonth(record['month'] as String),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.onSurfaceVariant,
                 ),
-              ),
-              const SizedBox(height: 24),
-              // Format selection
-              Text(
-                'Selectează formatul:',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Excel option
-              InkWell(
-                onTap: () => Navigator.pop(context, 'excel'),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.successLight,
-                    border: Border.all(color: AppColors.success.withValues(alpha: 0.3), width: 2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AppColors.success.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.table_chart,
-                          color: AppColors.success,
-                          size: 28,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Excel (.xlsx)',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.success,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Tabel editabil',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.success,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        color: AppColors.success,
-                        size: 20,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
               // PDF option
               InkWell(
                 onTap: () => Navigator.pop(context, 'pdf'),
@@ -955,7 +923,7 @@ class _ServiceRecordsListScreenState
                   onPressed: () => Navigator.pop(context),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: BorderSide(color: AppColors.outline),
+                    side: BorderSide(color: theme.colorScheme.outline),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -969,7 +937,8 @@ class _ServiceRecordsListScreenState
             ],
           ),
         ),
-      ),
+      );
+    },
     );
 
     if (format != null && context.mounted) {
@@ -1037,7 +1006,7 @@ class _ServiceRecordsListScreenState
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Eroare la export: ${e.toString()}'),
+              content: Text('Eroare la export: ${AppErrorHandler.userFriendlyMessage(e)}'),
               backgroundColor: AppColors.error,
             ),
           );
@@ -1054,7 +1023,6 @@ class _ServiceRecordsListScreenState
       month: group['month'] as String,
       interiorWashes: group['interiorWashes'] as int,
       exteriorWashes: group['exteriorWashes'] as int,
-      tapiterieWashes: group['tapiterieWashes'] as int,
       completeWashes: group['completeWashes'] as int,
       notes: null,
       isFinalized: false,
@@ -1152,15 +1120,15 @@ class _ServiceRecordsListScreenState
                       child: Container(
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? AppColors.primary
-                              : AppColors.outline,
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.outline,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Center(
                           child: Text(
                             monthName,
                             style: TextStyle(
-                              color: isSelected ? Colors.white : Colors.black87,
+                              color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
                               fontWeight: isSelected
                                   ? FontWeight.bold
                                   : FontWeight.normal,

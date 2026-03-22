@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import 'animated_counter.dart';
 
 class StatCard extends StatelessWidget {
   final IconData icon;
@@ -21,14 +22,17 @@ class StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final effectiveColor = color ?? AppColors.accent;
+    final theme = Theme.of(context);
+    final numericValue = int.tryParse(value);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: theme.colorScheme.surface,
           borderRadius: AppSpacing.borderRadiusLg,
-          border: Border.all(color: AppColors.outline),
+          border: Border.all(color: theme.colorScheme.outline),
           boxShadow: AppSpacing.shadowSm,
         ),
         child: Column(
@@ -43,18 +47,24 @@ class StatCard extends StatelessWidget {
               child: Icon(icon, size: 20, color: effectiveColor),
             ),
             const SizedBox(height: AppSpacing.md),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.onSurface,
-              ),
-            ),
+            numericValue != null
+                ? AnimatedCounter(
+                    value: numericValue,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  )
+                : Text(
+                    value,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
             const SizedBox(height: AppSpacing.xxs),
             Text(
               label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.onSurfaceVariant,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
           ],

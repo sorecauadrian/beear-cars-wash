@@ -56,3 +56,9 @@ final signOutProvider = Provider<Future<void>>((ref) async {
   return await authRepo.signOut();
 });
 
+/// Delete account provider
+final deleteAccountProvider = Provider<Future<void>>((ref) async {
+  final authRepo = ref.read(authRepositoryProvider);
+  return await authRepo.deleteAccount();
+});
+

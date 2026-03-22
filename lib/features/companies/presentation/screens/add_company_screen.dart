@@ -113,20 +113,73 @@ class _AddCompanyScreenState extends ConsumerState<AddCompanyScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Client type selector
-              DropdownButtonFormField<ClientType>(
-                value: _clientType,
-                decoration: const InputDecoration(
-                  labelText: 'Tip client *',
-                  prefixIcon: Icon(Icons.category_outlined),
+              Text(
+                'Tip client *',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
                 ),
-                items: ClientType.values.map((type) {
-                  return DropdownMenuItem(value: type, child: Text(type.displayName));
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: ClientType.values.map((type) {
+                  final isSelected = _clientType == type;
+                  final isDisabled = _isLoading || widget.initialClientType != null;
+                  final icon = type == ClientType.persoanaFizica
+                      ? Icons.person_outline
+                      : Icons.business_outlined;
+                  return Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        right: type == ClientType.values.first ? AppSpacing.sm : 0,
+                        left: type == ClientType.values.last ? AppSpacing.sm : 0,
+                      ),
+                      child: GestureDetector(
+                        onTap: isDisabled ? null : () => setState(() => _clientType = type),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? theme.colorScheme.primary.withValues(alpha: 0.08)
+                                : theme.colorScheme.surfaceContainerHighest,
+                            borderRadius: AppSpacing.borderRadiusMd,
+                            border: Border.all(
+                              color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline,
+                              width: isSelected ? 2 : 1,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                icon,
+                                size: 28,
+                                color: isSelected
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                type.displayName,
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                  color: isSelected
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              if (isSelected) ...[
+                                const SizedBox(height: 4),
+                                Icon(Icons.check_circle, size: 16, color: theme.colorScheme.primary),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
                 }).toList(),
-                onChanged: (_isLoading || widget.initialClientType != null)
-                    ? null
-                    : (value) {
-                        if (value != null) setState(() => _clientType = value);
-                      },
               ),
               const SizedBox(height: 20),
 
@@ -196,7 +249,7 @@ class _AddCompanyScreenState extends ConsumerState<AddCompanyScreen> {
 
               // Shared fields
               const SizedBox(height: 24),
-              Divider(color: AppColors.outline),
+              Divider(color: theme.colorScheme.outline),
               const SizedBox(height: 16),
               _buildSectionLabel(theme, 'Cont și contact'),
               const SizedBox(height: 12),
@@ -247,13 +300,13 @@ class _AddCompanyScreenState extends ConsumerState<AddCompanyScreen> {
   Widget _buildSectionLabel(ThemeData theme, String text, {bool optional = false}) {
     return Row(
       children: [
-        Text(text, style: theme.textTheme.labelLarge?.copyWith(color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600)),
+        Text(text, style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
         if (optional) ...[
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(color: AppColors.surfaceVariant, borderRadius: AppSpacing.borderRadiusFull),
-            child: Text('opțional', style: theme.textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceVariant)),
+            decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest, borderRadius: AppSpacing.borderRadiusFull),
+            child: Text('opțional', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ),
         ],
       ],

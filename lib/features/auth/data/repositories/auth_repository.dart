@@ -94,6 +94,68 @@ class AuthRepository {
     }
   }
 
+  /// Delete the current user's account and all associated data
+  Future<void> deleteAccount() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('Utilizatorul nu este autentificat');
+    }
+
+    final uid = user.uid;
+
+    // Get user doc to find companyId
+    final userDoc = await _firestore
+        .collection(FirestorePaths.users)
+        .doc(uid)
+        .get();
+
+    if (userDoc.exists) {
+      final data = userDoc.data() as Map<String, dynamic>;
+      final companyId = data['companyId'] as String?;
+
+      if (companyId != null && companyId.isNotEmpty) {
+        // Check if this is the only user in the company
+        final companyUsers = await _firestore
+            .collection(FirestorePaths.users)
+            .where('companyId', isEqualTo: companyId)
+            .get();
+
+        if (companyUsers.docs.length <= 1) {
+          // Last user in company -- delete company data too
+          final batch = _firestore.batch();
+
+          final vehicles = await _firestore
+              .collection(FirestorePaths.vehicles)
+              .where('companyId', isEqualTo: companyId)
+              .get();
+          for (final doc in vehicles.docs) {
+            batch.delete(doc.reference);
+          }
+
+          final bookings = await _firestore
+              .collection(FirestorePaths.bookings)
+              .where('companyId', isEqualTo: companyId)
+              .get();
+          for (final doc in bookings.docs) {
+            batch.delete(doc.reference);
+          }
+
+          batch.delete(_firestore.collection(FirestorePaths.companies).doc(companyId));
+          await batch.commit();
+        }
+      }
+
+      // Delete user document
+      await _firestore.collection(FirestorePaths.users).doc(uid).delete();
+    }
+
+    // Clear notification service
+    NotificationService().clearUserId();
+
+    // Delete Firebase Auth account
+    await user.delete();
+  }
+
   /// Get user data stream
   Stream<UserModel?> getUserDataStream(String userId) {
     return _firestore

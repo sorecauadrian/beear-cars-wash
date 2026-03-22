@@ -14,6 +14,13 @@ import '../../../../features/pricing/data/models/pricing_model.dart';
 
 /// Service for exporting service records to Excel and PDF
 class ExportService {
+  static double _getBookingPrice(BookingModel booking, Map<String, VehicleModel> vehicles, PricingModel? pricing) {
+    if (pricing == null) return 0.0;
+    final vehicle = vehicles[booking.vehicleId];
+    final vehicleType = vehicle?.vehicleType ?? VehicleType.small;
+    return pricing.getPrice(vehicleType, booking.washType);
+  }
+
   /// Export single service record with booking details to Excel
   static Future<void> exportRecordToExcel(
     ServiceRecordModel record,
@@ -24,26 +31,21 @@ class ExportService {
   ) async {
     try {
       final excel = Excel.createExcel();
-      // Delete default Sheet1 if it exists
       if (excel.sheets.keys.contains('Sheet1')) {
         excel.delete('Sheet1');
       }
-      // Create or get the sheet with our desired name
       final sheet = excel['Registre Servicii'];
 
-      // Company and month info
       final monthDate = _parseMonth(record.month);
       final companyName = company?.name ?? 'Companie necunoscută';
       final monthName = DateFormat('MMMM yyyy', 'ro_RO').format(monthDate);
 
-      // Header row - Summary
       final summaryHeaders = [
         'Companie',
         'Lună',
         'Interior',
         'Exterior',
-        'Tapițerie',
-        'Complet',
+        'Interior + Exterior',
         'Total Servicii',
       ];
       
@@ -53,13 +55,11 @@ class ExportService {
         cell.cellStyle = CellStyle(bold: true);
       }
 
-      // Summary data
       final summaryData = [
         companyName,
         monthName,
         record.interiorWashes,
         record.exteriorWashes,
-        record.tapiterieWashes,
         record.completeWashes,
         record.totalServices,
       ];
@@ -73,14 +73,13 @@ class ExportService {
         }
       }
 
-      // Empty row
       int rowIndex = 3;
 
-      // Bookings detail header
       final bookingHeaders = [
         'Data',
         'Ora',
         'Număr Înmatriculare',
+        'Tip Vehicul',
         'Tip Serviciu',
         'Preț',
         'Locație',
@@ -94,18 +93,18 @@ class ExportService {
       }
       rowIndex++;
 
-      // Booking details
       double totalAmount = 0.0;
       for (var booking in bookings) {
         final bookingDate = DateTime.parse(booking.date);
         final vehicle = vehicles[booking.vehicleId];
-        final price = pricing?.getPriceForWashType(booking.washType) ?? 0.0;
+        final price = _getBookingPrice(booking, vehicles, pricing);
         totalAmount += price;
         
         final rowData = [
           DateFormat('dd.MM.yyyy', 'ro_RO').format(bookingDate),
           '${booking.slotStart} - ${booking.slotEnd}',
           vehicle?.plateNumber ?? 'Necunoscut',
+          vehicle?.vehicleType.label ?? '-',
           _getWashTypeLabel(booking.washType),
           price > 0 ? '${price.toStringAsFixed(2)} RON' : '-',
           booking.addressText,
@@ -119,10 +118,10 @@ class ExportService {
         rowIndex++;
       }
 
-      // Total row
       rowIndex++;
       final totalRow = [
         'TOTAL',
+        '',
         '',
         '',
         '',
@@ -136,17 +135,14 @@ class ExportService {
         cell.cellStyle = CellStyle(bold: true);
       }
 
-      // Auto-size columns
-      for (var i = 0; i < 7; i++) {
+      for (var i = 0; i < 8; i++) {
         sheet.setColumnWidth(i, 20);
       }
 
-      // Ensure Sheet1 is deleted before saving (delete again in case it was recreated)
       if (excel.sheets.keys.contains('Sheet1')) {
         excel.delete('Sheet1');
       }
 
-      // Save file with company and month in name
       final directory = await getApplicationDocumentsDirectory();
       final safeCompanyName = companyName.replaceAll(RegExp(r'[^\w\s-]'), '').replaceAll(' ', '_');
       final fileName = 'Registru_${safeCompanyName}_${record.month}.xlsx';
@@ -154,7 +150,6 @@ class ExportService {
       final file = File(filePath);
       await file.writeAsBytes(excel.encode()!);
 
-      // Share file
       await Share.shareXFiles(
         [XFile(filePath)],
         subject: 'Registru Servicii - $companyName - $monthName',
@@ -179,14 +174,12 @@ class ExportService {
       final companyName = company?.name ?? 'Companie necunoscută';
       final monthName = DateFormat('MMMM yyyy', 'ro_RO').format(monthDate);
       
-      // Load logo image
       pw.MemoryImage? logoImage;
       try {
         final ByteData logoData = await rootBundle.load('assets/images/beear-cars-wash-no-text.png');
         final Uint8List logoBytes = logoData.buffer.asUint8List();
         logoImage = pw.MemoryImage(logoBytes);
       } catch (e) {
-        // If logo fails to load, continue without it
         logoImage = null;
       }
 
@@ -195,7 +188,6 @@ class ExportService {
         final fontData = await rootBundle.load('assets/fonts/NotoSans.ttf');
         customFont = pw.Font.ttf(fontData);
       } catch (e) {
-        // Font not found, will use default font
         customFont = null;
       }
 
@@ -205,7 +197,6 @@ class ExportService {
           margin: const pw.EdgeInsets.all(40),
           theme: customFont != null ? pw.ThemeData.withFont(base: customFont) : null,
           build: (pw.Context context) {
-            // Helper to create text style with custom font
             pw.TextStyle textStyle({
               double? fontSize,
               pw.FontWeight? fontWeight,
@@ -218,22 +209,20 @@ class ExportService {
                 font: customFont,
               );
             }
-            // Calculate totals
+
             double totalAmount = 0.0;
             final serviceTotals = <WashType, double>{
               WashType.interior: 0.0,
               WashType.exterior: 0.0,
-              WashType.tapiterie: 0.0,
               WashType.all: 0.0,
             };
             
             for (var booking in bookings) {
-              final price = pricing?.getPriceForWashType(booking.washType) ?? 0.0;
+              final price = _getBookingPrice(booking, vehicles, pricing);
               totalAmount += price;
               serviceTotals[booking.washType] = serviceTotals[booking.washType]! + price;
             }
             return [
-              // Header with logo and company name
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -286,7 +275,7 @@ class ExportService {
               pw.Container(
                 padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
-                  color: PdfColor(233 / 255, 58 / 255, 31 / 255, 0.1), // RGBA: #E93A1F with 10% opacity
+                  color: PdfColor(233 / 255, 58 / 255, 31 / 255, 0.1),
                   borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
                 ),
                 child: pw.Row(
@@ -307,7 +296,6 @@ class ExportService {
               ),
               pw.SizedBox(height: 20),
 
-              // Summary
               pw.Container(
                 padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
@@ -329,28 +317,19 @@ class ExportService {
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
                         pw.Text(
-                          'Interior: ${record.interiorWashes} x ${pricing?.interiorPrice.toStringAsFixed(2) ?? '0.00'} RON = ${serviceTotals[WashType.interior]!.toStringAsFixed(2)} RON',
+                          'Interior: ${record.interiorWashes} servicii = ${serviceTotals[WashType.interior]!.toStringAsFixed(2)} RON',
                           style: textStyle(),
                         ),
                         pw.Text(
-                          'Exterior: ${record.exteriorWashes} x ${pricing?.exteriorPrice.toStringAsFixed(2) ?? '0.00'} RON = ${serviceTotals[WashType.exterior]!.toStringAsFixed(2)} RON',
+                          'Exterior: ${record.exteriorWashes} servicii = ${serviceTotals[WashType.exterior]!.toStringAsFixed(2)} RON',
                           style: textStyle(),
                         ),
                       ],
                     ),
                     pw.SizedBox(height: 8),
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      children: [
-                        pw.Text(
-                          'Tapițerie: ${record.tapiterieWashes} x ${pricing?.tapiteriePrice.toStringAsFixed(2) ?? '0.00'} RON = ${serviceTotals[WashType.tapiterie]!.toStringAsFixed(2)} RON',
-                          style: textStyle(),
-                        ),
-                        pw.Text(
-                          'Complet: ${record.completeWashes} x ${pricing?.completePrice.toStringAsFixed(2) ?? '0.00'} RON = ${serviceTotals[WashType.all]!.toStringAsFixed(2)} RON',
-                          style: textStyle(),
-                        ),
-                      ],
+                    pw.Text(
+                      'Int + Ext: ${record.completeWashes} servicii = ${serviceTotals[WashType.all]!.toStringAsFixed(2)} RON',
+                      style: textStyle(),
                     ),
                     pw.SizedBox(height: 8),
                     pw.Divider(),
@@ -380,7 +359,6 @@ class ExportService {
               ),
               pw.SizedBox(height: 20),
 
-              // Bookings table
               pw.Text(
                 'Detalii servicii',
                 style: textStyle(
@@ -392,7 +370,6 @@ class ExportService {
               pw.Table(
                 border: pw.TableBorder.all(color: PdfColors.grey),
                 children: [
-                  // Header
                   pw.TableRow(
                     decoration: const pw.BoxDecoration(
                       color: PdfColors.grey200,
@@ -400,17 +377,17 @@ class ExportService {
                     children: [
                       _buildTableCell('Data', isHeader: true, customFont: customFont),
                       _buildTableCell('Ora', isHeader: true, customFont: customFont),
-                      _buildTableCell('Număr Înmatriculare', isHeader: true, customFont: customFont),
+                      _buildTableCell('Nr. Înmatriculare', isHeader: true, customFont: customFont),
+                      _buildTableCell('Tip Vehicul', isHeader: true, customFont: customFont),
                       _buildTableCell('Tip Serviciu', isHeader: true, customFont: customFont),
                       _buildTableCell('Preț', isHeader: true, customFont: customFont),
                       _buildTableCell('Locație', isHeader: true, customFont: customFont),
                     ],
                   ),
-                  // Data rows
                   ...bookings.map((booking) {
                     final bookingDate = DateTime.parse(booking.date);
                     final vehicle = vehicles[booking.vehicleId];
-                    final price = pricing?.getPriceForWashType(booking.washType) ?? 0.0;
+                    final price = _getBookingPrice(booking, vehicles, pricing);
                     return pw.TableRow(
                       children: [
                         _buildTableCell(
@@ -419,19 +396,20 @@ class ExportService {
                         ),
                         _buildTableCell('${booking.slotStart} - ${booking.slotEnd}', customFont: customFont),
                         _buildTableCell(vehicle?.plateNumber ?? 'Necunoscut', customFont: customFont),
+                        _buildTableCell(vehicle?.vehicleType.label ?? '-', customFont: customFont),
                         _buildTableCell(_getWashTypeLabel(booking.washType), customFont: customFont),
                         _buildTableCell(price > 0 ? '${price.toStringAsFixed(2)} RON' : '-', customFont: customFont),
                         _buildTableCell(booking.addressText, customFont: customFont),
                       ],
                     );
                   }),
-                  // Total row
                   pw.TableRow(
                     decoration: const pw.BoxDecoration(
                       color: PdfColors.grey300,
                     ),
                     children: [
                       _buildTableCell('TOTAL', isHeader: true, customFont: customFont),
+                      _buildTableCell('', isHeader: true, customFont: customFont),
                       _buildTableCell('', isHeader: true, customFont: customFont),
                       _buildTableCell('', isHeader: true, customFont: customFont),
                       _buildTableCell('', isHeader: true, customFont: customFont),
@@ -442,7 +420,6 @@ class ExportService {
                 ],
               ),
 
-                // Notes section if any
               if (bookings.any((b) => b.description != null && b.description!.isNotEmpty)) ...[
                 pw.SizedBox(height: 20),
                 pw.Text(
@@ -480,7 +457,6 @@ class ExportService {
         ),
       );
 
-      // Save and share
       final directory = await getApplicationDocumentsDirectory();
       final safeCompanyName = companyName.replaceAll(RegExp(r'[^\w\s-]'), '').replaceAll(' ', '_');
       final fileName = 'Registru_${safeCompanyName}_${record.month}.pdf';
@@ -506,7 +482,7 @@ class ExportService {
         style: pw.TextStyle(
           fontSize: isHeader ? 10 : 9,
           fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
-          font: customFont, // Use custom font for Romanian characters
+          font: customFont,
         ),
       ),
     );
@@ -523,10 +499,8 @@ class ExportService {
         return 'Spălare Interior';
       case WashType.exterior:
         return 'Spălare Exterior';
-      case WashType.tapiterie:
-        return 'Spălare Tapițerie';
       case WashType.all:
-        return 'Spălare Completă';
+        return 'Spălare Interior + Exterior';
     }
   }
 }

@@ -22,6 +22,7 @@ class _CompaniesListScreenState extends ConsumerState<CompaniesListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final companiesAsync = ref.watch(allCompaniesProvider);
 
     return Scaffold(
@@ -34,16 +35,16 @@ class _CompaniesListScreenState extends ConsumerState<CompaniesListScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
             decoration: BoxDecoration(
-              color: AppColors.surface,
-              border: Border(bottom: BorderSide(color: AppColors.outline.withValues(alpha: 0.5))),
+              color: theme.colorScheme.surface,
+              border: Border(bottom: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.5))),
             ),
             child: Row(
               children: [
-                _buildFilterChip('Toți', _selectedFilter == null, () => setState(() => _selectedFilter = null)),
+                _buildFilterChip(context, 'Toți', _selectedFilter == null, () => setState(() => _selectedFilter = null)),
                 const SizedBox(width: AppSpacing.sm),
-                _buildFilterChip('Juridică', _selectedFilter == ClientType.persoanaJuridica, () => setState(() => _selectedFilter = ClientType.persoanaJuridica)),
+                _buildFilterChip(context, 'Juridică', _selectedFilter == ClientType.persoanaJuridica, () => setState(() => _selectedFilter = ClientType.persoanaJuridica)),
                 const SizedBox(width: AppSpacing.sm),
-                _buildFilterChip('Fizică', _selectedFilter == ClientType.persoanaFizica, () => setState(() => _selectedFilter = ClientType.persoanaFizica)),
+                _buildFilterChip(context, 'Fizică', _selectedFilter == ClientType.persoanaFizica, () => setState(() => _selectedFilter = ClientType.persoanaFizica)),
               ],
             ),
           ),
@@ -91,7 +92,8 @@ class _CompaniesListScreenState extends ConsumerState<CompaniesListScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label, bool isSelected, VoidCallback onTap) {
+  Widget _buildFilterChip(BuildContext context, String label, bool isSelected, VoidCallback onTap) {
+    final theme = Theme.of(context);
     return FilterChip(
       label: Text(label),
       selected: isSelected,
@@ -102,19 +104,20 @@ class _CompaniesListScreenState extends ConsumerState<CompaniesListScreen> {
       selectedColor: AppColors.accent.withValues(alpha: 0.15),
       checkmarkColor: AppColors.accent,
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.accent : AppColors.onSurfaceVariant,
+        color: isSelected ? AppColors.accent : theme.colorScheme.onSurfaceVariant,
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
       ),
     );
   }
 
   Widget _buildCompanyCard(BuildContext context, WidgetRef ref, CompanyModel company) {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: theme.colorScheme.surface,
         borderRadius: AppSpacing.borderRadiusLg,
-        border: Border.all(color: AppColors.outline),
+        border: Border.all(color: theme.colorScheme.outline),
         boxShadow: AppSpacing.shadowSm,
       ),
       child: ListTile(
@@ -122,17 +125,17 @@ class _CompaniesListScreenState extends ConsumerState<CompaniesListScreen> {
         leading: Container(
           padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
-            color: company.isActive ? AppColors.successLight : AppColors.surfaceVariant,
+            color: company.isActive ? AppColors.successLight : theme.colorScheme.surfaceContainerHighest,
             borderRadius: AppSpacing.borderRadiusSm,
           ),
           child: Icon(
             company.clientType == ClientType.persoanaJuridica ? Icons.business_outlined : Icons.person_outline,
-            color: company.isActive ? AppColors.success : AppColors.onSurfaceVariant,
+            color: company.isActive ? AppColors.success : theme.colorScheme.onSurfaceVariant,
           ),
         ),
         title: Text(
           company.name,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+          style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
             decoration: company.isActive ? null : TextDecoration.lineThrough,
           ),
@@ -141,8 +144,8 @@ class _CompaniesListScreenState extends ConsumerState<CompaniesListScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            Text(company.email, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceVariant)),
-            Text(company.city, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceVariant)),
+            Text(company.email, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            Text(company.city, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ],
         ),
         trailing: PopupMenuButton(
@@ -150,7 +153,7 @@ class _CompaniesListScreenState extends ConsumerState<CompaniesListScreen> {
             PopupMenuItem(
               value: 'edit',
               child: Row(children: [
-                Icon(Icons.edit_outlined, size: 20, color: AppColors.onSurfaceVariant),
+                Icon(Icons.edit_outlined, size: 20, color: theme.colorScheme.onSurfaceVariant),
                 const SizedBox(width: 12),
                 const Text('Editează'),
               ]),

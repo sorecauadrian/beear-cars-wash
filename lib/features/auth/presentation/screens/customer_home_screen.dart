@@ -5,17 +5,15 @@ import '../../../../core/widgets/app_logo.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/constants/app_icons.dart';
-import '../../../../core/utils/date_time_utils.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/bookings/data/models/booking_model.dart';
 import '../../../../features/bookings/presentation/providers/booking_provider.dart';
-import '../../../../shared/widgets/booking_card.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/skeleton_loader.dart';
 import '../../../../shared/widgets/stat_card.dart';
 import '../../../../shared/widgets/section_header.dart';
-import '../../../../features/vehicles/data/repositories/vehicle_repository.dart';
-import '../../../../features/vehicles/data/models/vehicle_model.dart';
+import '../../../../shared/widgets/booking_card_with_vehicle.dart';
+import '../../../../shared/widgets/animated_list_item.dart';
 import 'package:go_router/go_router.dart';
 
 class CustomerHomeScreen extends ConsumerWidget {
@@ -61,8 +59,6 @@ class CustomerHomeScreen extends ConsumerWidget {
                 padding: const EdgeInsets.only(top: AppSpacing.lg),
                 child: SectionHeader(
                   title: 'REZERVĂRI ACTIVE',
-                  trailing: 'Vezi toate',
-                  onTrailingTap: () {},
                 ),
               ),
             ),
@@ -112,7 +108,7 @@ class CustomerHomeScreen extends ConsumerWidget {
           Text(
             'Gestionează rezervările tale',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.onSurfaceVariant,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -200,7 +196,10 @@ class CustomerHomeScreen extends ConsumerWidget {
           delegate: SliverChildBuilderDelegate(
             (context, index) {
               final booking = active[index];
-              return _BookingCardWithVehicle(booking: booking);
+              return AnimatedListItem(
+                index: index,
+                child: BookingCardWithVehicle(booking: booking),
+              );
             },
             childCount: active.length,
           ),
@@ -229,29 +228,3 @@ class CustomerHomeScreen extends ConsumerWidget {
   }
 }
 
-class _BookingCardWithVehicle extends StatelessWidget {
-  final BookingModel booking;
-
-  const _BookingCardWithVehicle({required this.booking});
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<VehicleModel?>(
-      future: _getVehicle(booking.vehicleId),
-      builder: (context, snap) {
-        return BookingCard(
-          booking: booking,
-          vehiclePlate: snap.data?.plateNumber,
-        );
-      },
-    );
-  }
-
-  Future<VehicleModel?> _getVehicle(String id) async {
-    try {
-      return await VehicleRepository().getVehicleById(id);
-    } catch (_) {
-      return null;
-    }
-  }
-}

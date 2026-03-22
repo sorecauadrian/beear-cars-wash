@@ -6,23 +6,18 @@ import 'core/routing/app_router.dart';
 import 'core/config/firebase_config.dart';
 import 'core/services/notification_service.dart';
 
+final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Firebase
-  // This will work once you add the config files (see docs/FIREBASE_SETUP.md)
+
   try {
     await FirebaseConfig.initialize();
-    
-    // Initialize notification service
     await NotificationService().initialize();
   } catch (e) {
-    // If Firebase fails to initialize, the app will still run
-    // but Firebase features won't work. This allows development
-    // before Firebase is set up.
     debugPrint('Warning: Firebase not initialized. Add config files to enable Firebase features.');
   }
-  
+
   runApp(
     const ProviderScope(
       child: BeearCarsWashApp(),
@@ -30,14 +25,18 @@ void main() async {
   );
 }
 
-class BeearCarsWashApp extends StatelessWidget {
+class BeearCarsWashApp extends ConsumerWidget {
   const BeearCarsWashApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+
     return MaterialApp.router(
       title: 'Beear Cars Wash',
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
       routerConfig: AppRouter.router,
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
@@ -46,7 +45,6 @@ class BeearCarsWashApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [
-        Locale('en', 'US'),
         Locale('ro', 'RO'),
       ],
       locale: const Locale('ro', 'RO'),

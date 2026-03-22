@@ -33,7 +33,6 @@ class _AddEditServiceRecordScreenState
   DateTime? _selectedMonth;
   int _interiorWashes = 0;
   int _exteriorWashes = 0;
-  int _tapiterieWashes = 0;
   int _completeWashes = 0;
   bool _isFinalized = false;
   bool _isLoading = false;
@@ -74,7 +73,6 @@ class _AddEditServiceRecordScreenState
           _selectedMonth = _parseMonth(record.month);
           _interiorWashes = record.interiorWashes;
           _exteriorWashes = record.exteriorWashes;
-          _tapiterieWashes = record.tapiterieWashes;
           _completeWashes = record.completeWashes;
           _isFinalized = record.isFinalized;
           _notesController.text = record.notes ?? '';
@@ -122,7 +120,6 @@ class _AddEditServiceRecordScreenState
 
     if (_interiorWashes == 0 &&
         _exteriorWashes == 0 &&
-        _tapiterieWashes == 0 &&
         _completeWashes == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -147,7 +144,6 @@ class _AddEditServiceRecordScreenState
         month: _formatMonth(_selectedMonth!),
         interiorWashes: _interiorWashes,
         exteriorWashes: _exteriorWashes,
-        tapiterieWashes: _tapiterieWashes,
         completeWashes: _completeWashes,
         notes: _notesController.text.trim().isEmpty
             ? null
@@ -373,17 +369,9 @@ class _AddEditServiceRecordScreenState
               ),
               const SizedBox(height: 12),
               _buildServiceCounter(
-                'Tapițerie',
-                _tapiterieWashes,
-                AppColors.warning,
-                Icons.chair,
-                isReadOnly,
-              ),
-              const SizedBox(height: 12),
-              _buildServiceCounter(
-                'Complet',
+                'Interior + Exterior',
                 _completeWashes,
-                AppColors.darkNavy,
+                AppColors.accent,
                 Icons.all_inclusive,
                 isReadOnly,
               ),
@@ -393,7 +381,7 @@ class _AddEditServiceRecordScreenState
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.cream,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -406,7 +394,7 @@ class _AddEditServiceRecordScreenState
                           ),
                     ),
                     Text(
-                      '${_interiorWashes + _exteriorWashes + _tapiterieWashes + _completeWashes}',
+                      '${_interiorWashes + _exteriorWashes + _completeWashes}',
                       style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                             color: AppColors.primary,
                             fontWeight: FontWeight.bold,
@@ -547,10 +535,7 @@ class _AddEditServiceRecordScreenState
                             case 'Exterior':
                               _exteriorWashes--;
                               break;
-                            case 'Tapițerie':
-                              _tapiterieWashes--;
-                              break;
-                            case 'Complet':
+                            case 'Interior + Exterior':
                               _completeWashes--;
                               break;
                           }
@@ -579,10 +564,7 @@ class _AddEditServiceRecordScreenState
                     case 'Exterior':
                       _exteriorWashes++;
                       break;
-                    case 'Tapițerie':
-                      _tapiterieWashes++;
-                      break;
-                    case 'Complet':
+                    case 'Interior + Exterior':
                       _completeWashes++;
                       break;
                   }
