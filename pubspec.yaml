@@ -2,7 +2,7 @@ name: beear_cars_wash
 description: "B2B on-site car wash service app for Beear Cars Wash"
 publish_to: 'none'
 
-version: 1.1.0+3
+version: 1.1.0+4
 
 environment:
   sdk: ^3.8.1
@@ -46,6 +46,9 @@ dependencies:
   share_plus: ^10.1.2
   month_year_picker: ^0.5.0+1
   url_launcher: ^6.2.5
+
+dependency_overrides:
+  path_provider_foundation: 2.5.1
 
 dev_dependencies:
   flutter_test:
