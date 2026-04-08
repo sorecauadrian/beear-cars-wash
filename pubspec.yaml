@@ -2,7 +2,7 @@ name: beear_cars_wash
 description: "B2B on-site car wash service app for Beear Cars Wash"
 publish_to: 'none'
 
-version: 1.1.0+4
+version: 1.1.0+5
 
 environment:
   sdk: ^3.8.1
@@ -17,10 +17,10 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   # Firebase
-  firebase_core: ^3.6.0
-  firebase_auth: ^5.3.1
-  cloud_firestore: ^5.4.4
-  firebase_messaging: ^15.1.3
+  firebase_core: ^4.6.0
+  firebase_auth: ^6.3.0
+  cloud_firestore: ^6.2.0
+  firebase_messaging: ^16.1.1
 
   # State Management
   flutter_riverpod: ^2.6.1
@@ -42,13 +42,10 @@ dependencies:
   excel: ^4.0.3
   pdf: ^3.11.1
   printing: ^5.13.3
-  path_provider: ^2.1.4
+  path_provider: ^2.1.5
   share_plus: ^10.1.2
   month_year_picker: ^0.5.0+1
   url_launcher: ^6.2.5
-
-dependency_overrides:
-  path_provider_foundation: 2.5.1
 
 dev_dependencies:
   flutter_test:

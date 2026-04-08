@@ -25,13 +25,18 @@ workflows:
         script: |
           echo $GOOGLE_SERVICE_INFO | base64 --decode > $CM_BUILD_DIR/ios/Runner/GoogleService-Info.plist
 
+      - name: Clean previous build
+        script: |
+          flutter clean
+          rm -f pubspec.lock
+
       - name: Get Flutter packages
         script: |
           flutter pub get
 
       - name: Install CocoaPods
         script: |
-          cd ios && pod install
+          cd ios && rm -rf Pods Podfile.lock && pod install --repo-update
 
       - name: Build IPA
         script: |
