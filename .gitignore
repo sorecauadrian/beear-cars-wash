@@ -44,11 +44,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Firebase config files (keep these private!)
-android/app/google-services.json
+# Firebase config files (dev/prod variants - keep private)
 android/app/src/dev/google-services.json
 android/app/src/prod/google-services.json
-ios/Runner/GoogleService-Info.plist
 ios/Runner/GoogleService-Info-Dev.plist
 ios/Runner/GoogleService-Info-Prod.plist
 

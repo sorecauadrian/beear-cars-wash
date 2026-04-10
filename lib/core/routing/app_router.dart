@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'route_names.dart';
+import '../config/firebase_config.dart';
 import '../../core/widgets/splash_screen.dart';
 import '../../features/auth/presentation/screens/auth_screen.dart';
 import '../../features/auth/presentation/screens/customer_home_screen.dart';
@@ -52,7 +53,21 @@ class AppRouter {
   static final _router = GoRouter(
     initialLocation: RouteNames.splash,
     redirect: (context, state) async {
-      final firebaseUser = FirebaseAuth.instance.currentUser;
+      if (!FirebaseConfig.isInitialized) {
+        final isSplashPage = state.uri.toString() == RouteNames.splash;
+        if (isSplashPage) return null;
+        return RouteNames.login;
+      }
+
+      User? firebaseUser;
+      try {
+        firebaseUser = FirebaseAuth.instance.currentUser;
+      } catch (_) {
+        final isSplashPage = state.uri.toString() == RouteNames.splash;
+        if (isSplashPage) return null;
+        return RouteNames.login;
+      }
+
       final isLoginPage = state.uri.toString() == RouteNames.login;
       final isSplashPage = state.uri.toString() == RouteNames.splash;
 
@@ -66,7 +81,7 @@ class AppRouter {
             return RouteNames.companyHome;
           }
         } catch (e) {
-          return null;
+          return RouteNames.login;
         }
       }
 
