@@ -115,8 +115,10 @@ class AdminMoreScreen extends ConsumerWidget {
             subtitle: 'Ieși din cont',
             isDestructive: true,
             onTap: () async {
-              final authRepo = ref.read(authRepositoryProvider);
-              await authRepo.signOut();
+              try {
+                final authRepo = ref.read(authRepositoryProvider);
+                await authRepo.signOut();
+              } catch (_) {}
               if (context.mounted) context.go(RouteNames.login);
             },
           ),

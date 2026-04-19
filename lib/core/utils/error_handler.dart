@@ -17,6 +17,11 @@ class AppErrorHandler {
       }
     }
 
+    if (message.contains('No Firebase App') ||
+        message.contains('Firebase.initializeApp()')) {
+      return 'Serviciul nu este disponibil momentan. Repornește aplicația.';
+    }
+
     if (message.contains('network-request-failed') ||
         message.contains('SocketException') ||
         message.contains('ClientException')) {

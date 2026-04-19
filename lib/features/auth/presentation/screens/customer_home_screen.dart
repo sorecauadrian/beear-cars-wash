@@ -32,8 +32,10 @@ class CustomerHomeScreen extends ConsumerWidget {
             icon: const Icon(AppIcons.logout, size: 22),
             tooltip: 'Deconectare',
             onPressed: () async {
-              final authRepo = ref.read(authRepositoryProvider);
-              await authRepo.signOut();
+              try {
+                final authRepo = ref.read(authRepositoryProvider);
+                await authRepo.signOut();
+              } catch (_) {}
               if (context.mounted) context.go(RouteNames.login);
             },
           ),
