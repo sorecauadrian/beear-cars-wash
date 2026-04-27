@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "210497304024",
+    "project_id": "beear-cars-wash",
+    "storage_bucket": "beear-cars-wash.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:210497304024:android:dc3f4d2f5b189520cc2ead",
+        "android_client_info": {
+          "package_name": "com.beear.carswash"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaHgeZlmVAnXdNkcpriWsHiWOa3FWiHKQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
