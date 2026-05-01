@@ -107,6 +107,13 @@ class AdminMoreScreen extends ConsumerWidget {
             subtitle: 'Modifică parola și preferințele',
             onTap: () => context.push(RouteNames.adminSettings),
           ),
+          _buildMenuItem(
+            context,
+            icon: Icons.notifications_none_rounded,
+            title: 'Notificări',
+            subtitle: 'Vezi istoricul notificărilor',
+            onTap: () => context.push(RouteNames.adminNotifications),
+          ),
           const Divider(height: AppSpacing.xl),
           _buildMenuItem(
             context,

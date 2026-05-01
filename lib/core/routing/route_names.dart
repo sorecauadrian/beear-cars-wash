@@ -27,6 +27,10 @@ class RouteNames {
   static const String serviceRecordsList = '/admin/service-records';
   static const String adminMore = '/admin/more';
 
+  // Notifications
+  static const String customerNotifications = '/company/notifications';
+  static const String adminNotifications = '/admin/notifications';
+
   // Admin sub-routes
   static const String addCompany = '/admin/companies/add';
   static const String editCompany = '/admin/companies/edit';

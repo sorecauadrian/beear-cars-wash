@@ -30,7 +30,13 @@ class AdminBookingsListScreen extends ConsumerStatefulWidget {
 
 class _AdminBookingsListScreenState extends ConsumerState<AdminBookingsListScreen> {
   BookingStatus? _statusFilter;
-  bool _showCompleted = false;
+  bool _showAll = false;
+
+  static const _archivedStatuses = {
+    BookingStatus.done,
+    BookingStatus.cancelled,
+    BookingStatus.rejected,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -51,11 +57,17 @@ class _AdminBookingsListScreenState extends ConsumerState<AdminBookingsListScree
         actions: [
           IconButton(
             icon: Icon(
-              _showCompleted ? Icons.visibility : Icons.visibility_off_outlined,
+              _showAll ? Icons.visibility : Icons.visibility_off_outlined,
               size: 22,
             ),
-            tooltip: _showCompleted ? 'Ascunde finalizate' : 'Arată finalizate',
-            onPressed: () => setState(() => _showCompleted = !_showCompleted),
+            tooltip: _showAll ? 'Ascunde arhivate' : 'Arată toate (arhivate)',
+            onPressed: () => setState(() {
+              _showAll = !_showAll;
+              // Clear filter if it belongs to the now-hidden archived group
+              if (!_showAll && _statusFilter != null && _archivedStatuses.contains(_statusFilter)) {
+                _statusFilter = null;
+              }
+            }),
           ),
         ],
       ),
@@ -74,8 +86,19 @@ class _AdminBookingsListScreenState extends ConsumerState<AdminBookingsListScree
 
   Widget _buildStatusFilters(BuildContext context) {
     final theme = Theme.of(context);
-    final statuses = [null, BookingStatus.accepted, BookingStatus.inProgress, BookingStatus.done];
-    final labels = ['Toate', 'Acceptate', 'În progres', 'Finalizate'];
+
+    final activeEntries = <MapEntry<BookingStatus?, String>>[
+      const MapEntry(null, 'Toate'),
+      const MapEntry(BookingStatus.requested, 'Solicitate'),
+      const MapEntry(BookingStatus.accepted, 'Acceptate'),
+      const MapEntry(BookingStatus.inProgress, 'În progres'),
+    ];
+    final archivedEntries = <MapEntry<BookingStatus?, String>>[
+      const MapEntry(BookingStatus.done, 'Finalizate'),
+      const MapEntry(BookingStatus.cancelled, 'Anulate'),
+      const MapEntry(BookingStatus.rejected, 'Respinse'),
+    ];
+    final entries = _showAll ? [...activeEntries, ...archivedEntries] : activeEntries;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
@@ -86,16 +109,16 @@ class _AdminBookingsListScreenState extends ConsumerState<AdminBookingsListScree
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
-          children: List.generate(statuses.length, (i) {
-            final isSelected = _statusFilter == statuses[i];
+          children: entries.map((entry) {
+            final isSelected = _statusFilter == entry.key;
             return Padding(
-              padding: EdgeInsets.only(right: AppSpacing.sm),
+              padding: const EdgeInsets.only(right: AppSpacing.sm),
               child: FilterChip(
-                label: Text(labels[i]),
+                label: Text(entry.value),
                 selected: isSelected,
                 onSelected: (_) {
                   HapticFeedback.selectionClick();
-                  setState(() => _statusFilter = statuses[i]);
+                  setState(() => _statusFilter = entry.key);
                 },
                 selectedColor: AppColors.accent.withValues(alpha: 0.15),
                 checkmarkColor: AppColors.accent,
@@ -105,7 +128,7 @@ class _AdminBookingsListScreenState extends ConsumerState<AdminBookingsListScree
                 ),
               ),
             );
-          }),
+          }).toList(),
         ),
       ),
     );
@@ -120,17 +143,32 @@ class _AdminBookingsListScreenState extends ConsumerState<AdminBookingsListScree
       data: (bookings) {
         var filtered = bookings.toList();
 
-        if (!_showCompleted) {
-          filtered = filtered.where((b) => b.status != BookingStatus.done).toList();
+        if (!_showAll) {
+          filtered = filtered.where((b) => !_archivedStatuses.contains(b.status)).toList();
         }
         if (_statusFilter != null) {
           filtered = filtered.where((b) => b.status == _statusFilter).toList();
         }
 
+        // Upcoming/today: ascending (soonest first); past: descending (most recent first)
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
         filtered.sort((a, b) {
-          final dateCompare = a.date.compareTo(b.date);
-          if (dateCompare != 0) return dateCompare;
-          return a.slotStart.compareTo(b.slotStart);
+          final da = DateTimeUtils.parseDate(a.date) ?? today;
+          final db = DateTimeUtils.parseDate(b.date) ?? today;
+          final dayA = DateTime(da.year, da.month, da.day);
+          final dayB = DateTime(db.year, db.month, db.day);
+          final aFuture = !dayA.isBefore(today);
+          final bFuture = !dayB.isBefore(today);
+          if (aFuture && bFuture) {
+            final c = dayA.compareTo(dayB);
+            return c != 0 ? c : a.slotStart.compareTo(b.slotStart);
+          } else if (!aFuture && !bFuture) {
+            final c = dayB.compareTo(dayA);
+            return c != 0 ? c : b.slotStart.compareTo(a.slotStart);
+          } else {
+            return aFuture ? -1 : 1;
+          }
         });
 
         if (filtered.isEmpty) {
@@ -146,7 +184,12 @@ class _AdminBookingsListScreenState extends ConsumerState<AdminBookingsListScree
           final company = companiesAsync.value?.where((c) => c.id == booking.companyId).firstOrNull;
           groupedByDate.putIfAbsent(booking.date, () => []).add(MapEntry(booking, company));
         }
-        final sortedDates = groupedByDate.keys.toList()..sort();
+        // Preserve sort order by extracting dates in filtered order
+        final sortedDates = <String>[];
+        final seenDates = <String>{};
+        for (final booking in filtered) {
+          if (seenDates.add(booking.date)) sortedDates.add(booking.date);
+        }
 
         return RefreshIndicator(
           onRefresh: () async {
@@ -160,8 +203,6 @@ class _AdminBookingsListScreenState extends ConsumerState<AdminBookingsListScree
               final date = sortedDates[dateIndex];
               final entries = groupedByDate[date]!;
               final parsedDate = DateTimeUtils.parseDate(date);
-              final now = DateTime.now();
-              final today = DateTime(now.year, now.month, now.day);
               final tomorrow = today.add(const Duration(days: 1));
               final dateOnly = parsedDate != null ? DateTime(parsedDate.year, parsedDate.month, parsedDate.day) : null;
 

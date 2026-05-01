@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/routing/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/error_handler.dart';
@@ -10,6 +12,7 @@ import '../../../../shared/widgets/app_confirm_dialog.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../companies/presentation/providers/company_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class CustomerSettingsScreen extends ConsumerStatefulWidget {
   const CustomerSettingsScreen({super.key});
@@ -135,28 +138,79 @@ class _CustomerSettingsScreenState extends ConsumerState<CustomerSettingsScreen>
 
                 const SizedBox(height: AppSpacing.md),
 
-                // Info banner
+                // Info banner with admin contact
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.darkInfoLight : AppColors.infoLight,
                     borderRadius: AppSpacing.borderRadiusMd,
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.info_outline, size: 20, color: isDark ? AppColors.darkInfo : AppColors.info),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          'Contactați administratorul pentru modificări la contul dumneavoastră.',
-                          style: theme.textTheme.bodySmall?.copyWith(color: isDark ? AppColors.darkInfo : AppColors.info),
+                      Row(
+                        children: [
+                          Icon(Icons.info_outline, size: 20, color: isDark ? AppColors.darkInfo : AppColors.info),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Text(
+                              'Contactați administratorul pentru modificări la contul dumneavoastră.',
+                              style: theme.textTheme.bodySmall?.copyWith(color: isDark ? AppColors.darkInfo : AppColors.info),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      GestureDetector(
+                        onTap: () async {
+                          final uri = Uri.parse(
+                              'mailto:beearcarswash.team@gmail.com?subject=Cerere%20modificare%20cont');
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri);
+                          }
+                        },
+                        child: Row(
+                          children: [
+                            Icon(Icons.email_outlined,
+                                size: 16,
+                                color: isDark ? AppColors.darkInfo : AppColors.info),
+                            const SizedBox(width: AppSpacing.xs),
+                            Text(
+                              'beearcarswash.team@gmail.com',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: isDark ? AppColors.darkInfo : AppColors.info,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                                decorationColor:
+                                    isDark ? AppColors.darkInfo : AppColors.info,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.lg),
+
+                // Logout button
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    try {
+                      final authRepo = ref.read(authRepositoryProvider);
+                      await authRepo.signOut();
+                    } catch (_) {}
+                    if (context.mounted) context.go(RouteNames.login);
+                  },
+                  icon: const Icon(Icons.logout_rounded),
+                  label: const Text('Deconectare'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.md),
 
                 // Delete account
                 OutlinedButton.icon(

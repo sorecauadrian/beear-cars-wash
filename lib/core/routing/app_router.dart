@@ -25,6 +25,7 @@ import '../../features/settings/presentation/screens/customer_settings_screen.da
 import '../../features/admin/presentation/screens/admin_more_screen.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
 import '../../features/auth/presentation/screens/terms_and_privacy_screen.dart';
+import '../../features/notifications/presentation/screens/notifications_screen.dart';
 
 class AppRouter {
   AppRouter._();
@@ -161,7 +162,24 @@ class AppRouter {
       ),
       GoRoute(
         path: RouteNames.createBooking,
-        pageBuilder: (context, state) => _buildTransition(state, const CreateBookingScreen()),
+        pageBuilder: (context, state) {
+          final dateParam = state.uri.queryParameters['date'];
+          DateTime? initialDate;
+          if (dateParam != null) {
+            try {
+              initialDate = DateTime.parse(dateParam);
+            } catch (_) {}
+          }
+          return _buildTransition(state, CreateBookingScreen(initialDate: initialDate));
+        },
+      ),
+      GoRoute(
+        path: RouteNames.customerNotifications,
+        pageBuilder: (context, state) => _buildTransition(state, const NotificationsScreen()),
+      ),
+      GoRoute(
+        path: RouteNames.adminNotifications,
+        pageBuilder: (context, state) => _buildTransition(state, const NotificationsScreen()),
       ),
 
       // ═══ Admin shell with bottom navigation ═══

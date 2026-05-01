@@ -14,10 +14,10 @@ class VehiclesListWrapperScreen extends StatelessWidget {
         title: const Text('Mașinile mele'),
       ),
       body: const VehiclesListScreen(),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () => context.push(RouteNames.addVehicle),
-        icon: const Icon(AppIcons.addVehicle),
-        label: const Text('Adaugă mașină'),
+        tooltip: 'Adaugă mașină',
+        child: const Icon(AppIcons.addVehicle),
       ),
     );
   }

@@ -20,7 +20,8 @@ import '../../../../shared/utils/wash_type_utils.dart';
 import 'package:go_router/go_router.dart';
 
 class CreateBookingScreen extends ConsumerStatefulWidget {
-  const CreateBookingScreen({super.key});
+  final DateTime? initialDate;
+  const CreateBookingScreen({super.key, this.initialDate});
 
   @override
   ConsumerState<CreateBookingScreen> createState() => _CreateBookingScreenState();
@@ -34,12 +35,12 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
   // Step 1: Vehicles
   final List<VehicleModel> _selectedVehicles = [];
   final Map<String, WashType> _vehicleWashTypes = {};
-  final Map<String, WashType?> _expandedWashType = {};
 
   // Step 2: Date & Time
-  DateTime _selectedDate = DateTime.now();
+  late DateTime _selectedDate;
   final Map<String, String> _vehicleTimeSlots = {}; // vehicleId → slot
   Set<String> _unavailableSlots = {};
+  Set<String> _fullDays = {}; // dates formatted as YYYY-MM-DD that have no free slots
 
   // Step 3: Location
   final _addressController = TextEditingController();
@@ -53,7 +54,9 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedDate = widget.initialDate ?? DateTime.now();
     _loadUnavailableSlots();
+    _loadFullDays();
   }
 
   @override
@@ -92,6 +95,42 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
       }
 
       setState(() => _unavailableSlots = blocked);
+    } catch (_) {}
+  }
+
+  Future<void> _loadFullDays() async {
+    try {
+      final repository = BookingRepository();
+      final today = DateTime.now();
+      final startStr = DateTimeUtils.formatDate(today);
+      final endStr = DateTimeUtils.formatDate(today.add(const Duration(days: 30)));
+      final bookings = await repository.getBookingsForDateRange(startStr, endStr);
+      final allSlots = DateTimeUtils.getTimeSlots();
+
+      final Map<String, List<BookingModel>> byDate = {};
+      for (final b in bookings) {
+        if (b.status == BookingStatus.rejected || b.status == BookingStatus.done) continue;
+        byDate.putIfAbsent(b.date, () => []).add(b);
+      }
+
+      final full = <String>{};
+      for (final entry in byDate.entries) {
+        final blocked = <String>{};
+        for (final b in entry.value) {
+          final startIdx = allSlots.indexOf(b.slotStart);
+          if (startIdx < 0) { blocked.add(b.slotStart); continue; }
+          final endTime = DateTimeUtils.parseTime(b.slotEnd);
+          for (int i = startIdx; i < allSlots.length; i++) {
+            final slotTime = DateTimeUtils.parseTime(allSlots[i]);
+            if (slotTime == null) continue;
+            if (endTime != null && !slotTime.isBefore(endTime)) break;
+            blocked.add(allSlots[i]);
+          }
+        }
+        if (blocked.length >= allSlots.length) full.add(entry.key);
+      }
+
+      if (mounted) setState(() => _fullDays = full);
     } catch (_) {}
   }
 
@@ -406,7 +445,6 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
   Widget _buildWashTypeRow(BuildContext context, VehicleModel vehicle, WashType type, AsyncValue<dynamic> pricingAsync) {
     final theme = Theme.of(context);
     final isChosen = _vehicleWashTypes[vehicle.id] == type;
-    final isExpanded = _expandedWashType[vehicle.id] == type;
     final color = WashTypeUtils.color(type);
     final priceText = pricingAsync.whenOrNull(
       data: (p) => p != null ? '${p.getPrice(vehicle.vehicleType, type).toStringAsFixed(0)} lei' : null,
@@ -424,134 +462,57 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
             width: isChosen ? 1.5 : 1,
           ),
         ),
-        child: Column(
-          children: [
-            InkWell(
-              borderRadius: AppSpacing.borderRadiusMd,
-              onTap: () {
-                HapticFeedback.selectionClick();
-                setState(() {
-                  _vehicleWashTypes[vehicle.id] = type;
-                  _expandedWashType[vehicle.id] =
-                      _expandedWashType[vehicle.id] == type ? null : type;
-                });
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                child: Row(
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isChosen ? color : Colors.transparent,
-                        border: Border.all(color: isChosen ? color : theme.colorScheme.outline, width: 2),
-                      ),
-                      child: isChosen
-                          ? const Icon(Icons.check, size: 12, color: Colors.white)
-                          : null,
-                    ),
-                    const SizedBox(width: 10),
-                    Icon(WashTypeUtils.icon(type), size: 18, color: isChosen ? color : theme.colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        WashTypeUtils.label(type),
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: isChosen ? FontWeight.w600 : FontWeight.w500,
-                          color: isChosen ? color : theme.colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
-                    if (priceText != null)
-                      Text(
-                        priceText,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: isChosen ? color : theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    const SizedBox(width: 6),
-                    AnimatedRotation(
-                      turns: isExpanded ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 200),
-                      child: Icon(Icons.expand_more, size: 20, color: theme.colorScheme.onSurfaceVariant),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            AnimatedCrossFade(
-              firstChild: const SizedBox.shrink(),
-              secondChild: _buildWashTypeDetails(context, type, pricingAsync),
-              crossFadeState: isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-              duration: const Duration(milliseconds: 200),
-              sizeCurve: Curves.easeInOut,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWashTypeDetails(BuildContext context, WashType type, AsyncValue<dynamic> pricingAsync) {
-    final color = WashTypeUtils.color(type);
-    final details = WashTypeUtils.details(type);
-    final durationLabel = WashTypeUtils.estimatedDurationLabel(type);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Divider(color: color.withValues(alpha: 0.2), height: 1),
-          const SizedBox(height: 10),
-          ...details.map((detail) => Padding(
-            padding: const EdgeInsets.only(bottom: 4),
+        child: InkWell(
+          borderRadius: AppSpacing.borderRadiusMd,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            setState(() {
+              _vehicleWashTypes[vehicle.id] = type;
+            });
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Container(
-                    width: 5,
-                    height: 5,
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isChosen ? color : Colors.transparent,
+                    border: Border.all(color: isChosen ? color : theme.colorScheme.outline, width: 2),
                   ),
+                  child: isChosen
+                      ? const Icon(Icons.check, size: 12, color: Colors.white)
+                      : null,
                 ),
+                const SizedBox(width: 10),
+                Icon(WashTypeUtils.icon(type), size: 18, color: isChosen ? color : theme.colorScheme.onSurfaceVariant),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    detail,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      height: 1.4,
+                    WashTypeUtils.label(type),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: isChosen ? FontWeight.w600 : FontWeight.w500,
+                      color: isChosen ? color : theme.colorScheme.onSurface,
                     ),
                   ),
                 ),
+                if (priceText != null)
+                  Text(
+                    priceText,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: isChosen ? color : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
               ],
             ),
-          )),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Icon(Icons.schedule_rounded, size: 14, color: color),
-              const SizedBox(width: 4),
-              Text(
-                'Durată estimată: $durationLabel',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -643,6 +604,26 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
               ),
             ),
           ),
+          if (_fullDays.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Row(
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  'Zilele dezactivate din calendar sunt complet ocupate',
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: AppSpacing.lg),
           Text('Selectează ora pentru fiecare mașină', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: AppSpacing.xs),
@@ -803,19 +784,41 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
   }
 
   Future<void> _selectDate() async {
+    final today = DateTime.now();
+    final todayOnly = DateTime(today.year, today.month, today.day);
+    final lastDay = todayOnly.add(const Duration(days: 30));
+    final safeInitial = _selectedDate.isBefore(todayOnly) ? todayOnly : _selectedDate;
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: safeInitial,
+      firstDate: todayOnly,
+      lastDate: lastDay,
+      selectableDayPredicate: (day) {
+        final dayStr = DateTimeUtils.formatDate(day);
+        return !_fullDays.contains(dayStr);
+      },
     );
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-        _vehicleTimeSlots.clear();
-      });
-      _loadUnavailableSlots();
+
+    if (picked == null) return;
+
+    if (picked.isBefore(todayOnly)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Nu poți face o rezervare pentru o dată din trecut'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
     }
+
+    setState(() {
+      _selectedDate = picked;
+      _vehicleTimeSlots.clear();
+    });
+    _loadUnavailableSlots();
   }
 
   // ═══ Step 3: Location ═══

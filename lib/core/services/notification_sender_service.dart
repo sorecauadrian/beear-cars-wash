@@ -58,6 +58,37 @@ class NotificationSenderService {
     }
   }
 
+  /// Notify BeeAR admins when a customer cancels their booking
+  Future<void> sendCustomerCancelledNotificationToAdmin({
+    required BookingModel booking,
+  }) async {
+    try {
+      final admins = await _getAdminUsers();
+      if (admins.isEmpty) return;
+
+      const title = 'Rezervare anulată de client';
+      final body = 'Clientul a anulat rezervarea din ${booking.date} la ${booking.slotStart}.';
+
+      for (final admin in admins) {
+        final fcmToken = admin['fcmToken'] as String?;
+        if (fcmToken != null && fcmToken.isNotEmpty) {
+          await _createNotificationDocument(
+            userId: admin.id,
+            fcmToken: fcmToken,
+            title: title,
+            body: body,
+            bookingId: booking.id,
+            status: BookingStatus.cancelled.toString(),
+          );
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Failed to send customer cancellation notification: $e');
+      }
+    }
+  }
+
   /// Send notification to company admin when booking status changes
   Future<void> sendBookingStatusNotification({
     required BookingModel booking,
@@ -172,6 +203,7 @@ class NotificationSenderService {
         'bookingId': bookingId,
         'status': status,
         'sent': false,
+        'isRead': false,
         'createdAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {

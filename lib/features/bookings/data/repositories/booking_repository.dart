@@ -146,6 +146,22 @@ class BookingRepository {
     }
   }
 
+  /// Get all bookings within a date range (inclusive)
+  Future<List<BookingModel>> getBookingsForDateRange(String startDate, String endDate) async {
+    try {
+      final snapshot = await _firestore
+          .collection(FirestorePaths.bookings)
+          .where('date', isGreaterThanOrEqualTo: startDate)
+          .where('date', isLessThanOrEqualTo: endDate)
+          .orderBy('date')
+          .orderBy('slotStart')
+          .get();
+      return snapshot.docs.map((doc) => BookingModel.fromFirestore(doc)).toList();
+    } catch (e) {
+      throw Exception('Failed to get bookings for date range: ${e.toString()}');
+    }
+  }
+
   /// Delete all bookings for a company
   Future<void> deleteBookingsByCompany(String companyId) async {
     try {

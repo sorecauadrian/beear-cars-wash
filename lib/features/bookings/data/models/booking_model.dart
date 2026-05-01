@@ -40,7 +40,7 @@ enum BookingStatus {
   requested,
   accepted,
   rejected,
-  cancelled, // Admin-initiated cancellation (accident, can't make it, etc.)
+  cancelled, // Cancellation by the customer or admin after acceptance
   inProgress,
   done;
 

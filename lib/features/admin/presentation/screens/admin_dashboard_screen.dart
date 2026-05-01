@@ -27,7 +27,13 @@ class AdminDashboardScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
-        actions: const [],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none_rounded, size: 24),
+            tooltip: 'Notificări',
+            onPressed: () => context.push(RouteNames.adminNotifications),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {

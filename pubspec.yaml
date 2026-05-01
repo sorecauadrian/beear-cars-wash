@@ -2,7 +2,7 @@ name: beear_cars_wash
 description: "B2B on-site car wash service app for Beear Cars Wash"
 publish_to: 'none'
 
-version: 1.1.0+7
+version: 1.2.0+8
 
 environment:
   sdk: ^3.8.1
