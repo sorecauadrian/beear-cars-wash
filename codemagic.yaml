@@ -38,12 +38,9 @@ workflows:
         script: |
           cd ios && rm -rf Pods Podfile.lock && pod install --repo-update
 
-      - name: Disable Swift Package Manager
-        script: |
-          flutter config --no-enable-swift-package-manager
-
       - name: Build IPA
         script: |
+          flutter config --no-enable-swift-package-manager
           flutter build ipa \
             --release \
             --export-options-plist=$CM_BUILD_DIR/ios/ExportOptions.plist
