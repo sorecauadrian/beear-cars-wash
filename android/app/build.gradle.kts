@@ -36,7 +36,7 @@ android {
         applicationId = "com.beear.carswash"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 23  // Required by Firebase Auth (minimum API level 23)
+        minSdk = 24  // Play automatic protection requires minimum API level 24
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
